@@ -18,6 +18,7 @@ import { getSyntheticDemoReports } from './demoReports.ts';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'tokenlens-scans.json');
+const TMP_DB_FILE = '/tmp/tokenlens-scans.json';
 
 interface DatabaseShape {
   liveReports: TokenScanReport[];
@@ -29,11 +30,15 @@ let memoryStore: DatabaseShape = {
 
 function loadDatabase(): void {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    if (fs.existsSync(DB_FILE)) {
-      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+    // Prefer /tmp if updated in a serverless runtime, otherwise load bundled data/tokenlens-scans.json
+    const candidatePath = fs.existsSync(TMP_DB_FILE)
+      ? TMP_DB_FILE
+      : fs.existsSync(DB_FILE)
+        ? DB_FILE
+        : null;
+
+    if (candidatePath) {
+      const raw = fs.readFileSync(candidatePath, 'utf-8');
       const parsed = JSON.parse(raw) as DatabaseShape;
       if (Array.isArray(parsed?.liveReports)) {
         memoryStore.liveReports = parsed.liveReports;
@@ -45,13 +50,22 @@ function loadDatabase(): void {
 }
 
 function saveDatabase(): void {
+  const payload = JSON.stringify(memoryStore, null, 2);
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!process.env.VERCEL) {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(DB_FILE, payload, 'utf-8');
+      return;
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify(memoryStore, null, 2), 'utf-8');
+  } catch {
+    // Fall through to /tmp on read-only filesystems
+  }
+  try {
+    fs.writeFileSync(TMP_DB_FILE, payload, 'utf-8');
   } catch (err) {
-    console.warn('Could not persist local scan store:', err);
+    console.warn('Could not persist scan store:', err);
   }
 }
 

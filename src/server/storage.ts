@@ -1,12 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import {
-  NetworkId,
+  type NetworkId,
   SUPPORTED_NETWORKS,
-  TokenScanReport,
-  PlatformStats,
-  ContractPermissions,
-  TradingSimulation,
+  type TokenScanReport,
+  type PlatformStats,
+  type ContractPermissions,
+  type TradingSimulation,
 } from '../types/tokenlens.ts';
 import { validateContractAddress, fetchOnChainMetadata } from './providers/rpcProvider.ts';
 import { fetchGoPlusSecurity } from './providers/goplusProvider.ts';

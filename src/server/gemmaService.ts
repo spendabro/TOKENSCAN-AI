@@ -1,12 +1,12 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import {
   AIAnalysisSchema,
-  AIAnalysisOutput,
-  SecurityFinding,
-  RiskOverviewMetrics,
-  TokenScanReport,
+  type AIAnalysisOutput,
+  type SecurityFinding,
+  type RiskOverviewMetrics,
+  type TokenScanReport,
   SUPPORTED_NETWORKS,
-  NetworkId,
+  type NetworkId,
 } from '../types/tokenlens.ts';
 
 function getGenAIClient(): GoogleGenAI | null {

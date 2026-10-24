@@ -1,10 +1,10 @@
 import {
-  NetworkId,
+  type NetworkId,
   SUPPORTED_NETWORKS,
-  MarketSnapshotData,
-  LiquidityPoolInfo,
-  ProviderProvenance,
-  TokenSearchCandidate,
+  type MarketSnapshotData,
+  type LiquidityPoolInfo,
+  type ProviderProvenance,
+  type TokenSearchCandidate,
 } from '../../types/tokenlens.ts';
 
 export interface DexScreenerNormalizedResult {

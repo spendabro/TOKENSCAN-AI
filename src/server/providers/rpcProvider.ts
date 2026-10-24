@@ -8,7 +8,7 @@ import {
   type Chain,
 } from 'viem';
 import { mainnet, bsc, base, arbitrum, polygon } from 'viem/chains';
-import { NetworkId, SUPPORTED_NETWORKS, ProviderProvenance } from '../../types/tokenlens.ts';
+import { type NetworkId, SUPPORTED_NETWORKS, type ProviderProvenance } from '../../types/tokenlens.ts';
 
 const ERC20_ABI = parseAbi([
   'function name() view returns (string)',

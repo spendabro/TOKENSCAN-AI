@@ -1,8 +1,8 @@
 import {
-  NetworkId,
+  type NetworkId,
   SUPPORTED_NETWORKS,
-  TradingSimulation,
-  ProviderProvenance,
+  type TradingSimulation,
+  type ProviderProvenance,
 } from '../../types/tokenlens.ts';
 
 export interface HoneypotNormalizedResult {

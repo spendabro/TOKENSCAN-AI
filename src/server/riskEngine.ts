@@ -1,17 +1,17 @@
 import {
-  NetworkId,
+  type NetworkId,
   SUPPORTED_NETWORKS,
-  SecurityFinding,
-  SeverityLevel,
-  FindingCategory,
-  RiskOverviewMetrics,
-  RiskClassification,
-  ContractPermissions,
-  TradingSimulation,
-  MarketSnapshotData,
-  HolderAnalysisData,
+  type SecurityFinding,
+  type SeverityLevel,
+  type FindingCategory,
+  type RiskOverviewMetrics,
+  type RiskClassification,
+  type ContractPermissions,
+  type TradingSimulation,
+  type MarketSnapshotData,
+  type HolderAnalysisData,
 } from '../types/tokenlens.ts';
-import { OnChainTokenMetadata } from './providers/rpcProvider.ts';
+import { type OnChainTokenMetadata } from './providers/rpcProvider.ts';
 
 export interface DeterministicRiskInput {
   networkId: NetworkId;

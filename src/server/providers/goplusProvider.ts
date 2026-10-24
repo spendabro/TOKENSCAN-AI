@@ -1,10 +1,10 @@
 import {
-  NetworkId,
+  type NetworkId,
   SUPPORTED_NETWORKS,
-  ContractPermissions,
-  HolderAnalysisData,
-  HolderEntry,
-  ProviderProvenance,
+  type ContractPermissions,
+  type HolderAnalysisData,
+  type HolderEntry,
+  type ProviderProvenance,
 } from '../../types/tokenlens.ts';
 
 export interface GoPlusNormalizedResult {

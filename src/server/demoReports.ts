@@ -1,4 +1,4 @@
-import { TokenScanReport } from '../types/tokenlens.ts';
+import { type TokenScanReport } from '../types/tokenlens.ts';
 import { evaluateDeterministicRisk } from './riskEngine.ts';
 import { buildDeterministicFallbackAnalysis } from './gemmaService.ts';
 

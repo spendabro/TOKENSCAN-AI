@@ -1,0 +1,102 @@
+// TokenLens AI — PostgreSQL / Prisma Schema (Section 17 Deliverable)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Token {
+  id              String           @id @default(cuid())
+  chainId         String
+  networkId       String
+  contractAddress String
+  name            String
+  symbol          String
+  decimals        Int?
+  createdAt       DateTime         @default(now())
+
+  scans           Scan[]
+  marketSnapshots MarketSnapshot[]
+  bookmarks       Bookmark[]
+
+  @@unique([chainId, contractAddress])
+  @@index([contractAddress])
+  @@index([symbol])
+}
+
+model Scan {
+  id              String            @id @default(cuid())
+  tokenId         String
+  status          String            // COMPLETED | PARTIAL | FAILED
+  startedAt       DateTime          @default(now())
+  completedAt     DateTime?
+  dataCoverage    Int               // 0 - 100 percentage
+  classification  String
+
+  token           Token             @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  findings        SecurityFinding[]
+  aiAnalyses      AIAnalysis[]
+
+  @@index([tokenId, startedAt(sort: Desc)])
+}
+
+model SecurityFinding {
+  id              String   @id @default(cuid())
+  findingCode     String   // e.g., EV-SC-001
+  scanId          String
+  category        String
+  severity        String   // Informational | Low | Moderate | High | Critical | Unknown
+  status          String   // Verified Observation | Third-Party Assessment | Heuristic Indicator | Missing / Unverified Data
+  title           String
+  explanation     String
+  evidence        Json
+  source          String
+  observedAt      DateTime @default(now())
+
+  scan            Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId, severity])
+}
+
+model MarketSnapshot {
+  id              String   @id @default(cuid())
+  tokenId         String
+  price           Float?
+  liquidity       Float?
+  volume          Float?
+  marketCap       Float?
+  fdv             Float?
+  timestamp       DateTime @default(now())
+
+  token           Token    @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@index([tokenId, timestamp(sort: Desc)])
+}
+
+model AIAnalysis {
+  id                 String   @id @default(cuid())
+  scanId             String
+  model              String   // e.g., gemma-4-31b-it
+  summary            String
+  structuredResponse Json
+  createdAt          DateTime @default(now())
+
+  scan               Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenId   String
+  createdAt DateTime @default(now())
+
+  token     Token    @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tokenId])
+}

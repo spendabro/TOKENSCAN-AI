@@ -1,0 +1,6 @@
+{
+  "name": "TokenLens AI",
+  "description": "Understand the token. Understand the risk. Open-source AI-powered Web3 token security intelligence and deterministic risk analysis platform powered by Gemma 4.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -35,11 +35,10 @@ TokenLens AI is an open-source, read-only Web3 token security intelligence platf
    ```
 2. **Configure Environment Variables**:
    Copy `.env.example` to `.env` and ensure `GEMINI_API_KEY` is set.
-3. **Start Full-Stack Server**:
-   ```bash
-   npm run dev
-   ```
-   The application runs on `http://localhost:3000`.
+3. **Live Hosted Application Links**:
+   - **Shared / Public Preview URL**: [https://ais-pre-meahiajbmqatr7mktcfi2f-807237000806.europe-west2.run.app](https://ais-pre-meahiajbmqatr7mktcfi2f-807237000806.europe-west2.run.app)
+   - **Development Preview URL**: [https://ais-dev-meahiajbmqatr7mktcfi2f-807237000806.europe-west2.run.app](https://ais-dev-meahiajbmqatr7mktcfi2f-807237000806.europe-west2.run.app)
+   - For local development: `npm run dev`
 
 ---
 

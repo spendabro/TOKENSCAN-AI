@@ -37,6 +37,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ stats }) => {
         setAuthError('Sign-in popup was closed before completion. Please try again.');
       } else if (code === 'auth/popup-blocked') {
         setAuthError('Your browser blocked the sign-in popup. Please allow popups for this site.');
+      } else if (code === 'auth/unauthorized-domain') {
+        setAuthError(
+          `Add "${window.location.hostname}" to Authorized Domains in Firebase Console (Authentication → Settings → Authorized domains) to sign in from this live URL.`
+        );
       } else {
         setAuthError(err?.message || 'Unable to complete Google authentication.');
       }

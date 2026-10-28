@@ -30,14 +30,22 @@ export async function fetchDexScreenerMarket(
     priceChange24h: null,
     priceChange6h: null,
     priceChange1h: null,
+    priceChange5m: null,
     liquidityUsd: null,
     volume24hUsd: null,
+    volume6hUsd: null,
+    volume1hUsd: null,
+    volume5mUsd: null,
     marketCapUsd: null,
     fdvUsd: null,
     buys24h: null,
     sells24h: null,
+    buys6h: null,
+    sells6h: null,
     buys1h: null,
     sells1h: null,
+    buys5m: null,
+    sells5m: null,
     buyPressure24hPercent: null,
     pairCount: 0,
     oldestPairCreatedAt: null,
@@ -133,10 +141,17 @@ export async function fetchDexScreenerMarket(
 
     let totalLiquidityUsd = 0;
     let totalVolume24hUsd = 0;
+    let totalVolume6hUsd = 0;
+    let totalVolume1hUsd = 0;
+    let totalVolume5mUsd = 0;
     let totalBuys24h = 0;
     let totalSells24h = 0;
+    let totalBuys6h = 0;
+    let totalSells6h = 0;
     let totalBuys1h = 0;
     let totalSells1h = 0;
+    let totalBuys5m = 0;
+    let totalSells5m = 0;
     let hasTxnData = false;
     let oldestTimestampMs: number | null = null;
 
@@ -145,6 +160,9 @@ export async function fetchDexScreenerMarket(
       const vol = Number(p?.volume?.h24 || 0);
       totalLiquidityUsd += liq;
       totalVolume24hUsd += vol;
+      totalVolume6hUsd += Number(p?.volume?.h6 || 0);
+      totalVolume1hUsd += Number(p?.volume?.h1 || 0);
+      totalVolume5mUsd += Number(p?.volume?.m5 || 0);
 
       const pBuys24h =
         p?.txns?.h24?.buys !== undefined && p?.txns?.h24?.buys !== null
@@ -161,11 +179,23 @@ export async function fetchDexScreenerMarket(
         totalSells24h += pSells24h || 0;
       }
 
+      if (p?.txns?.h6?.buys !== undefined) {
+        totalBuys6h += Number(p.txns.h6.buys || 0);
+      }
+      if (p?.txns?.h6?.sells !== undefined) {
+        totalSells6h += Number(p.txns.h6.sells || 0);
+      }
       if (p?.txns?.h1?.buys !== undefined) {
         totalBuys1h += Number(p.txns.h1.buys || 0);
       }
       if (p?.txns?.h1?.sells !== undefined) {
         totalSells1h += Number(p.txns.h1.sells || 0);
+      }
+      if (p?.txns?.m5?.buys !== undefined) {
+        totalBuys5m += Number(p.txns.m5.buys || 0);
+      }
+      if (p?.txns?.m5?.sells !== undefined) {
+        totalSells5m += Number(p.txns.m5.sells || 0);
       }
 
       if (p?.pairCreatedAt && typeof p.pairCreatedAt === 'number') {
@@ -196,6 +226,9 @@ export async function fetchDexScreenerMarket(
     for (let i = 8; i < sortedPairs.length; i++) {
       totalLiquidityUsd += Number(sortedPairs[i]?.liquidity?.usd || 0);
       totalVolume24hUsd += Number(sortedPairs[i]?.volume?.h24 || 0);
+      totalVolume6hUsd += Number(sortedPairs[i]?.volume?.h6 || 0);
+      totalVolume1hUsd += Number(sortedPairs[i]?.volume?.h1 || 0);
+      totalVolume5mUsd += Number(sortedPairs[i]?.volume?.m5 || 0);
       if (sortedPairs[i]?.txns?.h24?.buys !== undefined) {
         hasTxnData = true;
         totalBuys24h += Number(sortedPairs[i].txns.h24.buys || 0);
@@ -204,11 +237,23 @@ export async function fetchDexScreenerMarket(
         hasTxnData = true;
         totalSells24h += Number(sortedPairs[i].txns.h24.sells || 0);
       }
+      if (sortedPairs[i]?.txns?.h6?.buys !== undefined) {
+        totalBuys6h += Number(sortedPairs[i].txns.h6.buys || 0);
+      }
+      if (sortedPairs[i]?.txns?.h6?.sells !== undefined) {
+        totalSells6h += Number(sortedPairs[i].txns.h6.sells || 0);
+      }
       if (sortedPairs[i]?.txns?.h1?.buys !== undefined) {
         totalBuys1h += Number(sortedPairs[i].txns.h1.buys || 0);
       }
       if (sortedPairs[i]?.txns?.h1?.sells !== undefined) {
         totalSells1h += Number(sortedPairs[i].txns.h1.sells || 0);
+      }
+      if (sortedPairs[i]?.txns?.m5?.buys !== undefined) {
+        totalBuys5m += Number(sortedPairs[i].txns.m5.buys || 0);
+      }
+      if (sortedPairs[i]?.txns?.m5?.sells !== undefined) {
+        totalSells5m += Number(sortedPairs[i].txns.m5.sells || 0);
       }
     }
 
@@ -246,14 +291,25 @@ export async function fetchDexScreenerMarket(
           primaryPair?.priceChange?.h1 !== undefined
             ? Number(primaryPair.priceChange.h1)
             : null,
+        priceChange5m:
+          primaryPair?.priceChange?.m5 !== undefined
+            ? Number(primaryPair.priceChange.m5)
+            : null,
         liquidityUsd: Number(totalLiquidityUsd.toFixed(2)),
         volume24hUsd: Number(totalVolume24hUsd.toFixed(2)),
+        volume6hUsd: Number(totalVolume6hUsd.toFixed(2)),
+        volume1hUsd: Number(totalVolume1hUsd.toFixed(2)),
+        volume5mUsd: Number(totalVolume5mUsd.toFixed(2)),
         marketCapUsd,
         fdvUsd,
         buys24h: hasTxnData ? totalBuys24h : null,
         sells24h: hasTxnData ? totalSells24h : null,
+        buys6h: hasTxnData ? totalBuys6h : null,
+        sells6h: hasTxnData ? totalSells6h : null,
         buys1h: hasTxnData ? totalBuys1h : null,
         sells1h: hasTxnData ? totalSells1h : null,
+        buys5m: hasTxnData ? totalBuys5m : null,
+        sells5m: hasTxnData ? totalSells5m : null,
         buyPressure24hPercent,
         pairCount: pairs.length,
         oldestPairCreatedAt: oldestTimestampMs

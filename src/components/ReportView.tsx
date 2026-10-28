@@ -49,6 +49,7 @@ import {
   getClassificationStyles,
 } from '../utils/formatters.ts';
 import { XShareCardStudio } from './XShareCardStudio.tsx';
+import { D3PriceOrderFlowChart } from './D3PriceOrderFlowChart.tsx';
 
 interface ReportViewProps {
   report: TokenScanReport;
@@ -970,6 +971,9 @@ export const ReportView: React.FC<ReportViewProps> = ({
           </div>
         </div>
       </section>
+
+      {/* D3.JS PRICE HISTORY & BUY/SELL RATE FLUCTUATION CHART */}
+      <D3PriceOrderFlowChart report={report} />
 
       {/* 5. LIQUIDITY ANALYSIS & HOLDER CONCENTRATION (2-Column Split with Recharts) */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">

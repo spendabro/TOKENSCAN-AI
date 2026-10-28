@@ -3,7 +3,10 @@ import express from 'express';
 import { z } from 'zod';
 import { type NetworkId, SUPPORTED_NETWORKS } from '../types/tokenlens.ts';
 import { validateContractAddress } from './providers/rpcProvider.ts';
-import { searchTokensByQuery } from './providers/dexScreenerProvider.ts';
+import {
+  searchTokensByQuery,
+  fetchDexScreenerMarket,
+} from './providers/dexScreenerProvider.ts';
 import {
   getAllLiveReports,
   getReportById,
@@ -112,6 +115,41 @@ export function createApiApp() {
     }
     const candidates = await searchTokensByQuery(q);
     res.json({ candidates });
+  });
+
+  // Live price check endpoint for user-defined price alerts using the existing DEX Screener data source
+  app.get('/api/market-price', async (req, res) => {
+    const networkId = String(req.query.networkId || 'ethereum') as NetworkId;
+    const address = String(req.query.address || '').trim();
+
+    if (!SUPPORTED_NETWORKS[networkId] || !address) {
+      res.status(400).json({ error: 'Valid networkId and contract address are required.' });
+      return;
+    }
+
+    try {
+      const result = await fetchDexScreenerMarket(networkId, address);
+      res.json({
+        networkId,
+        contractAddress: address,
+        tokenName: result.tokenName,
+        tokenSymbol: result.tokenSymbol,
+        priceUsd: result.market.priceUsd,
+        priceChange24h: result.market.priceChange24h,
+        priceChange1h: result.market.priceChange1h,
+        liquidityUsd: result.market.liquidityUsd,
+        volume24hUsd: result.market.volume24hUsd,
+        buys24h: result.market.buys24h,
+        sells24h: result.market.sells24h,
+        buyPressure24hPercent: result.market.buyPressure24hPercent,
+        observedAt: result.provenance.observedAt,
+        providerStatus: result.provenance.status,
+      });
+    } catch (err: any) {
+      res.status(500).json({
+        error: err?.message || 'Failed to fetch live token price from DEX Screener.',
+      });
+    }
   });
 
   // Execute a full 10-step token security scan

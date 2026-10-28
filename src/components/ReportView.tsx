@@ -25,6 +25,7 @@ import {
   Code2,
   Scale,
   ArrowLeft,
+  BellRing,
 } from 'lucide-react';
 import {
   BarChart,
@@ -40,6 +41,8 @@ import {
   NetworkId,
   SUPPORTED_NETWORKS,
   SecurityFinding,
+  PriceAlert,
+  PriceAlertCondition,
 } from '../types/tokenlens.ts';
 import {
   formatUsd,
@@ -50,6 +53,7 @@ import {
 } from '../utils/formatters.ts';
 import { XShareCardStudio } from './XShareCardStudio.tsx';
 import { D3PriceOrderFlowChart } from './D3PriceOrderFlowChart.tsx';
+import { TokenPriceAlertPanel } from './PriceAlertPanel.tsx';
 
 interface ReportViewProps {
   report: TokenScanReport;
@@ -58,6 +62,22 @@ interface ReportViewProps {
   isScanning: boolean;
   isBookmarked: boolean;
   onToggleBookmark: () => void;
+  alerts: PriceAlert[];
+  onCreateAlert: (params: {
+    scanId: string;
+    networkId: NetworkId;
+    contractAddress: string;
+    tokenName: string;
+    tokenSymbol: string;
+    condition: PriceAlertCondition;
+    targetPriceUsd: number;
+    baselinePriceUsd: number;
+    note?: string;
+  }) => void;
+  onDeleteAlert: (alertId: string) => void;
+  onRearmAlert: (alertId: string) => void;
+  onCheckPricesNow: () => Promise<void>;
+  isCheckingPrices: boolean;
 }
 
 export const ReportView: React.FC<ReportViewProps> = ({
@@ -67,6 +87,12 @@ export const ReportView: React.FC<ReportViewProps> = ({
   isScanning,
   isBookmarked,
   onToggleBookmark,
+  alerts,
+  onCreateAlert,
+  onDeleteAlert,
+  onRearmAlert,
+  onCheckPricesNow,
+  isCheckingPrices,
 }) => {
   const [copiedAddr, setCopiedAddr] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
@@ -411,6 +437,18 @@ export const ReportView: React.FC<ReportViewProps> = ({
             >
               <Bookmark className="w-4 h-4 shrink-0" />
               <span>{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('token-price-alert-panel');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="px-3 py-2 rounded-xl bg-[#0B0C1E] hover:bg-[#1E2040] border border-[#F59E0B]/50 text-xs font-semibold text-[#F59E0B] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <BellRing className="w-4 h-4 text-[#F59E0B] shrink-0" />
+              <span>Price Alert</span>
             </button>
 
             <button
@@ -973,7 +1011,18 @@ export const ReportView: React.FC<ReportViewProps> = ({
       </section>
 
       {/* D3.JS PRICE HISTORY & BUY/SELL RATE FLUCTUATION CHART */}
-      <D3PriceOrderFlowChart report={report} />
+      <D3PriceOrderFlowChart report={report} alerts={alerts} />
+
+      {/* USER-DEFINED TOKEN PRICE ALERT SYSTEM */}
+      <TokenPriceAlertPanel
+        report={report}
+        alerts={alerts}
+        onCreateAlert={onCreateAlert}
+        onDeleteAlert={onDeleteAlert}
+        onRearmAlert={onRearmAlert}
+        onCheckPricesNow={onCheckPricesNow}
+        isCheckingPrices={isCheckingPrices}
+      />
 
       {/* 5. LIQUIDITY ANALYSIS & HOLDER CONCENTRATION (2-Column Split with Recharts) */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">

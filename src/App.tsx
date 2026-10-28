@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Shield, Loader2 } from 'lucide-react';
 import {
   NetworkId,
   TokenScanReport,
   PlatformStats,
+  PriceAlert,
+  PriceAlertCondition,
 } from './types/tokenlens.ts';
 import {
   Sidebar,
@@ -30,6 +32,12 @@ import {
 } from './components/SecondaryViews.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
 import {
+  GlobalPriceAlertToasts,
+  PriceAlertsDropdownModal,
+  playAlertChime,
+} from './components/PriceAlertPanel.tsx';
+import { formatTokenPrice } from './utils/formatters.ts';
+import {
   auth,
   db,
   subscribeToAuthSession,
@@ -47,6 +55,30 @@ import {
 } from './lib/firebase.ts';
 
 const BOOKMARKS_STORAGE_KEY = 'tokenlens_bookmarks_v1';
+const PRICE_ALERTS_STORAGE_KEY = 'tokenlens_price_alerts_v1';
+
+function dispatchBrowserNotification(alert: PriceAlert, livePrice: number) {
+  try {
+    if (
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      Notification.permission === 'granted'
+    ) {
+      new Notification(
+        `TokenLens Alert: ${alert.tokenSymbol} ${
+          alert.condition === 'above' ? '≥' : '≤'
+        } ${formatTokenPrice(alert.targetPriceUsd)}`,
+        {
+          body: `${alert.tokenName} (${alert.tokenSymbol}) is now trading at ${formatTokenPrice(
+            livePrice
+          )} on DEX Screener.${alert.note ? ` Note: ${alert.note}` : ''}`,
+        }
+      );
+    }
+  } catch {
+    // ignore browser notification errors in restricted contexts
+  }
+}
 
 export default function App() {
   const [authReady, setAuthReady] = useState(false);
@@ -76,6 +108,28 @@ export default function App() {
       return [];
     }
   });
+
+  // User-Defined Price Alerts state persisted in localStorage
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>(() => {
+    try {
+      const saved = localStorage.getItem(PRICE_ALERTS_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isCheckingPrices, setIsCheckingPrices] = useState(false);
+  const [alertsModalOpen, setAlertsModalOpen] = useState(false);
+  const alertsRef = useRef<PriceAlert[]>(priceAlerts);
+
+  useEffect(() => {
+    alertsRef.current = priceAlerts;
+    try {
+      localStorage.setItem(PRICE_ALERTS_STORAGE_KEY, JSON.stringify(priceAlerts));
+    } catch {
+      // ignore storage quota errors
+    }
+  }, [priceAlerts]);
 
   // Listen to unified Firebase + Universal Cross-Device Session state
   useEffect(() => {
@@ -134,20 +188,270 @@ export default function App() {
     return () => unsubscribe();
   }, [authReady, currentUser]);
 
+  // Evaluate active price alerts against newly observed token prices
+  const evaluateAlertsWithLivePrice = useCallback(
+    (networkId: NetworkId, contractAddress: string, livePriceUsd: number | null) => {
+      if (livePriceUsd === null || !Number.isFinite(livePriceUsd) || livePriceUsd <= 0) {
+        return;
+      }
+
+      const normAddr = contractAddress.toLowerCase();
+      const nowIso = new Date().toISOString();
+
+      let newlyTriggered: PriceAlert[] = [];
+
+      setPriceAlerts((prev) =>
+        prev.map((alert) => {
+          if (
+            alert.networkId !== networkId ||
+            alert.contractAddress.toLowerCase() !== normAddr
+          ) {
+            return alert;
+          }
+
+          if (alert.status === 'triggered') {
+            return {
+              ...alert,
+              lastCheckedPriceUsd: livePriceUsd,
+              lastCheckedAt: nowIso,
+            };
+          }
+
+          const crossed =
+            (alert.condition === 'above' && livePriceUsd >= alert.targetPriceUsd) ||
+            (alert.condition === 'below' && livePriceUsd <= alert.targetPriceUsd);
+
+          if (crossed) {
+            const updated: PriceAlert = {
+              ...alert,
+              lastCheckedPriceUsd: livePriceUsd,
+              lastCheckedAt: nowIso,
+              status: 'triggered',
+              triggeredAt: nowIso,
+              triggeredPriceUsd: livePriceUsd,
+              unreadNotification: true,
+            };
+            newlyTriggered.push(updated);
+            return updated;
+          }
+
+          return {
+            ...alert,
+            lastCheckedPriceUsd: livePriceUsd,
+            lastCheckedAt: nowIso,
+          };
+        })
+      );
+
+      // Update matching report's market price so the UI & D3 chart stay synchronized
+      setLiveReports((prevReports) =>
+        prevReports.map((rep) => {
+          if (
+            rep.token.networkId === networkId &&
+            rep.token.contractAddress.toLowerCase() === normAddr
+          ) {
+            return {
+              ...rep,
+              market: {
+                ...rep.market,
+                priceUsd: livePriceUsd,
+              },
+            };
+          }
+          return rep;
+        })
+      );
+
+      if (newlyTriggered.length > 0) {
+        playAlertChime();
+        newlyTriggered.forEach((trig) => dispatchBrowserNotification(trig, livePriceUsd));
+      }
+    },
+    []
+  );
+
+  // Poll DEX Screener live price feed (/api/market-price) for all monitored tokens
+  const checkMonitoredAlertPrices = useCallback(async () => {
+    const currentAlerts = alertsRef.current;
+    if (currentAlerts.length === 0) return;
+
+    // Group unique networkId:contractAddress pairs that have active alerts (or are in the watchlist)
+    const uniqueTokens = new Map<string, { networkId: NetworkId; contractAddress: string }>();
+    currentAlerts.forEach((a) => {
+      const key = `${a.networkId}:${a.contractAddress.toLowerCase()}`;
+      if (!uniqueTokens.has(key)) {
+        uniqueTokens.set(key, {
+          networkId: a.networkId,
+          contractAddress: a.contractAddress,
+        });
+      }
+    });
+
+    if (uniqueTokens.size === 0) return;
+
+    setIsCheckingPrices(true);
+    try {
+      await Promise.all(
+        Array.from(uniqueTokens.values()).map(async ({ networkId, contractAddress }) => {
+          try {
+            const res = await fetch(
+              `/api/market-price?networkId=${encodeURIComponent(
+                networkId
+              )}&address=${encodeURIComponent(contractAddress)}`
+            );
+            if (res.ok) {
+              const data = await res.json();
+              if (typeof data.priceUsd === 'number' && data.priceUsd > 0) {
+                evaluateAlertsWithLivePrice(networkId, contractAddress, data.priceUsd);
+              }
+            }
+          } catch {
+            // ignore transient network errors during background poll
+          }
+        })
+      );
+    } finally {
+      setIsCheckingPrices(false);
+    }
+  }, [evaluateAlertsWithLivePrice]);
+
+  // Automatic 20-second background polling when user has price alerts
+  useEffect(() => {
+    const hasActiveAlerts = priceAlerts.some((a) => a.status === 'active');
+    if (!hasActiveAlerts) return;
+
+    const interval = setInterval(() => {
+      checkMonitoredAlertPrices();
+    }, 20_000);
+
+    return () => clearInterval(interval);
+  }, [priceAlerts, checkMonitoredAlertPrices]);
+
+  const handleCreateAlert = (params: {
+    scanId: string;
+    networkId: NetworkId;
+    contractAddress: string;
+    tokenName: string;
+    tokenSymbol: string;
+    condition: PriceAlertCondition;
+    targetPriceUsd: number;
+    baselinePriceUsd: number;
+    note?: string;
+  }) => {
+    const nowIso = new Date().toISOString();
+    const livePrice = params.baselinePriceUsd;
+    const alreadyCrossed =
+      livePrice > 0 &&
+      ((params.condition === 'above' && livePrice >= params.targetPriceUsd) ||
+        (params.condition === 'below' && livePrice <= params.targetPriceUsd));
+
+    const newAlert: PriceAlert = {
+      id: `alert_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+      scanId: params.scanId,
+      networkId: params.networkId,
+      contractAddress: params.contractAddress,
+      tokenName: params.tokenName,
+      tokenSymbol: params.tokenSymbol,
+      condition: params.condition,
+      targetPriceUsd: params.targetPriceUsd,
+      baselinePriceUsd: params.baselinePriceUsd,
+      lastCheckedPriceUsd: livePrice > 0 ? livePrice : null,
+      lastCheckedAt: nowIso,
+      status: alreadyCrossed ? 'triggered' : 'active',
+      triggeredAt: alreadyCrossed ? nowIso : null,
+      triggeredPriceUsd: alreadyCrossed ? livePrice : null,
+      createdAt: nowIso,
+      note: params.note,
+      unreadNotification: alreadyCrossed,
+    };
+
+    setPriceAlerts((prev) => [newAlert, ...prev]);
+
+    if (alreadyCrossed) {
+      playAlertChime();
+      dispatchBrowserNotification(newAlert, livePrice);
+    } else {
+      // Immediately verify against live DEX Screener endpoint
+      setTimeout(() => {
+        checkMonitoredAlertPrices();
+      }, 250);
+    }
+  };
+
+  const handleDeleteAlert = (alertId: string) => {
+    setPriceAlerts((prev) => prev.filter((a) => a.id !== alertId));
+  };
+
+  const handleRearmAlert = (alertId: string) => {
+    setPriceAlerts((prev) =>
+      prev.map((a) =>
+        a.id === alertId
+          ? {
+              ...a,
+              status: 'active',
+              triggeredAt: null,
+              triggeredPriceUsd: null,
+              unreadNotification: false,
+            }
+          : a
+      )
+    );
+    setTimeout(() => {
+      checkMonitoredAlertPrices();
+    }, 200);
+  };
+
+  const handleDismissAlertNotification = (alertId: string) => {
+    setPriceAlerts((prev) =>
+      prev.map((a) =>
+        a.id === alertId ? { ...a, unreadNotification: false } : a
+      )
+    );
+  };
+
+  const handleInspectAlertReport = (alert: PriceAlert) => {
+    handleDismissAlertNotification(alert.id);
+    const matchingReport = liveReports.find(
+      (r) =>
+        r.scanId === alert.scanId ||
+        (r.token.networkId === alert.networkId &&
+          r.token.contractAddress.toLowerCase() === alert.contractAddress.toLowerCase())
+    );
+    if (matchingReport) {
+      setActiveReportId(matchingReport.scanId);
+      setActiveTab('reports');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      handleTriggerScan(alert.networkId, alert.contractAddress, false);
+    }
+  };
+
   const fetchPlatformData = useCallback(async () => {
     try {
       const reportsRes = await fetch('/api/reports');
       if (reportsRes.ok) {
         const data = await reportsRes.json();
-        setLiveReports(data.reports || []);
+        const fetchedReports: TokenScanReport[] = data.reports || [];
+        setLiveReports(fetchedReports);
         setStats(data.stats || null);
+
+        // Evaluate any active alerts against fetched reports' prices
+        fetchedReports.forEach((rep) => {
+          if (rep.market.priceUsd !== null) {
+            evaluateAlertsWithLivePrice(
+              rep.token.networkId,
+              rep.token.contractAddress,
+              rep.market.priceUsd
+            );
+          }
+        });
       }
     } catch (err) {
       console.warn('Error fetching platform data:', err);
     } finally {
       setLoadingInitial(false);
     }
-  }, []);
+  }, [evaluateAlertsWithLivePrice]);
 
   useEffect(() => {
     fetchPlatformData();
@@ -241,6 +545,14 @@ export default function App() {
         setStats(data.stats);
       }
 
+      if (newReport.market.priceUsd !== null) {
+        evaluateAlertsWithLivePrice(
+          newReport.token.networkId,
+          newReport.token.contractAddress,
+          newReport.market.priceUsd
+        );
+      }
+
       setActiveReportId(newReport.scanId);
       setActiveTab('reports');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -293,12 +605,33 @@ export default function App() {
     liveReports[0] ||
     null;
 
+  const unreadAlertsCount = priceAlerts.filter((a) => a.unreadNotification).length;
+
   return (
     <div
       className={`min-h-screen flex ${
         lightMode ? 'bg-[#0E1024] text-[#F8FAFC]' : 'bg-[#080817] text-[#F8FAFC]'
       }`}
     >
+      {/* Real-Time Price Alert Notification Toasts */}
+      <GlobalPriceAlertToasts
+        triggeredAlerts={priceAlerts}
+        onDismissNotification={handleDismissAlertNotification}
+        onInspectAlertReport={handleInspectAlertReport}
+      />
+
+      {/* Price Alerts Manager Modal */}
+      <PriceAlertsDropdownModal
+        isOpen={alertsModalOpen}
+        onClose={() => setAlertsModalOpen(false)}
+        alerts={priceAlerts}
+        onDeleteAlert={handleDeleteAlert}
+        onRearmAlert={handleRearmAlert}
+        onInspectAlertReport={handleInspectAlertReport}
+        onCheckPricesNow={checkMonitoredAlertPrices}
+        isCheckingPrices={isCheckingPrices}
+      />
+
       {/* Collapsible Left Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -336,6 +669,9 @@ export default function App() {
           onGlobalSearchSubmit={handleGlobalSearchSubmit}
           currentUser={currentUser}
           onSignOut={handleSignOut}
+          alertsCount={priceAlerts.length}
+          unreadAlertsCount={unreadAlertsCount}
+          onOpenAlertsModal={() => setAlertsModalOpen(true)}
         />
 
         <main className="flex-1 w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
@@ -402,6 +738,12 @@ export default function App() {
                       currentReport.token.contractAddress
                     )
                   }
+                  alerts={priceAlerts}
+                  onCreateAlert={handleCreateAlert}
+                  onDeleteAlert={handleDeleteAlert}
+                  onRearmAlert={handleRearmAlert}
+                  onCheckPricesNow={checkMonitoredAlertPrices}
+                  isCheckingPrices={isCheckingPrices}
                 />
               ) : (
                 <div className="rounded-2xl bg-[#15162D] border border-[#25274D] p-12 text-center space-y-3">

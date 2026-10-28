@@ -19,6 +19,8 @@ import {
   Moon,
   HelpCircle,
   LogOut,
+  Bell,
+  BellRing,
 } from 'lucide-react';
 import { NetworkId } from '../types/tokenlens.ts';
 import type { SessionUser } from '../lib/firebase.ts';
@@ -52,6 +54,9 @@ interface NavigationProps {
   onGlobalSearchSubmit: () => void;
   currentUser: SessionUser;
   onSignOut: () => void;
+  alertsCount?: number;
+  unreadAlertsCount?: number;
+  onOpenAlertsModal?: () => void;
 }
 
 const NAV_GROUPS: {
@@ -279,6 +284,9 @@ export const TopBar: React.FC<NavigationProps> = ({
   onGlobalSearchSubmit,
   currentUser,
   onSignOut,
+  alertsCount = 0,
+  unreadAlertsCount = 0,
+  onOpenAlertsModal,
 }) => {
   const tabTitleMap: Record<NavTab, string> = {
     dashboard: 'Security Intelligence Dashboard',
@@ -367,6 +375,33 @@ export const TopBar: React.FC<NavigationProps> = ({
             </optgroup>
           </select>
         </div>
+
+        {onOpenAlertsModal && (
+          <button
+            type="button"
+            onClick={onOpenAlertsModal}
+            aria-label="Open Token Price Alerts"
+            title="Manage Token Price Alerts"
+            className={`relative p-2 rounded-xl border transition-colors shrink-0 cursor-pointer flex items-center gap-1 ${
+              unreadAlertsCount > 0
+                ? 'bg-[#22C55E]/15 border-[#22C55E] text-[#22C55E]'
+                : alertsCount > 0
+                  ? 'bg-[#15162D] border-[#8B5CF6]/60 text-[#A78BFA]'
+                  : 'bg-[#15162D] border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC]'
+            }`}
+          >
+            {unreadAlertsCount > 0 ? (
+              <BellRing className="w-4 h-4 animate-bounce" />
+            ) : (
+              <Bell className="w-4 h-4" />
+            )}
+            {alertsCount > 0 && (
+              <span className="text-[10px] font-mono font-bold tabular-nums">
+                {alertsCount}
+              </span>
+            )}
+          </button>
+        )}
 
         <button
           onClick={() => onSelectTab('signals')}

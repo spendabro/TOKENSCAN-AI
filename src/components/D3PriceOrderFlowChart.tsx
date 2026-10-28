@@ -8,7 +8,7 @@ import {
   ArrowDownRight,
   Layers,
 } from 'lucide-react';
-import { TokenScanReport } from '../types/tokenlens.ts';
+import { TokenScanReport, PriceAlert } from '../types/tokenlens.ts';
 import { formatTokenPrice, formatUsd } from '../utils/formatters.ts';
 
 export interface PriceOrderFlowPoint {
@@ -248,7 +248,10 @@ function buildPriceAndOrderFlowSeries(
   });
 }
 
-export const D3PriceOrderFlowChart: React.FC<{ report: TokenScanReport }> = ({ report }) => {
+export const D3PriceOrderFlowChart: React.FC<{
+  report: TokenScanReport;
+  alerts?: PriceAlert[];
+}> = ({ report, alerts = [] }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -370,9 +373,24 @@ export const D3PriceOrderFlowChart: React.FC<{ report: TokenScanReport }> = ({ r
     // 1. UPPER PANE: D3 PRICE TRAJECTORY & CHECKPOINT NODES
     // ========================================================================
     if (pricePaneHeight > 0) {
+      const tokenAlerts = alerts.filter(
+        (a) =>
+          a.networkId === report.token.networkId &&
+          a.contractAddress.toLowerCase() === report.token.contractAddress.toLowerCase()
+      );
+
       const priceExtent = d3.extent(series, (d) => d.priceUsd) as [number, number];
-      const minP = priceExtent[0] ?? 0;
-      const maxP = priceExtent[1] ?? 1;
+      let minP = priceExtent[0] ?? 0;
+      let maxP = priceExtent[1] ?? 1;
+
+      // Include nearby target price alerts (within ±45% of price range) in Y domain
+      tokenAlerts.forEach((a) => {
+        if (a.targetPriceUsd >= minP * 0.55 && a.targetPriceUsd <= maxP * 1.45) {
+          minP = Math.min(minP, a.targetPriceUsd);
+          maxP = Math.max(maxP, a.targetPriceUsd);
+        }
+      });
+
       const pad = minP === maxP ? (minP || 1) * 0.05 : (maxP - minP) * 0.14;
 
       const yPrice = d3
@@ -465,6 +483,43 @@ export const D3PriceOrderFlowChart: React.FC<{ report: TokenScanReport }> = ({ r
         )
         .attr('stroke', '#080817')
         .attr('stroke-width', 1.5);
+
+      // Draw User-Defined Target Price Threshold Lines on the D3 Price Chart
+      const [yDomMin, yDomMax] = yPrice.domain();
+      tokenAlerts.forEach((alert) => {
+        if (alert.targetPriceUsd >= yDomMin && alert.targetPriceUsd <= yDomMax) {
+          const ay = yPrice(alert.targetPriceUsd);
+          const lineColor =
+            alert.status === 'triggered'
+              ? '#22C55E'
+              : alert.condition === 'above'
+                ? '#F59E0B'
+                : '#EF4444';
+
+          g.append('line')
+            .attr('x1', 0)
+            .attr('x2', innerWidth)
+            .attr('y1', ay)
+            .attr('y2', ay)
+            .attr('stroke', lineColor)
+            .attr('stroke-width', 1.5)
+            .attr('stroke-dasharray', '5,4');
+
+          g.append('text')
+            .attr('x', innerWidth - 4)
+            .attr('y', Math.max(pricePaneTop + 10, ay - 4))
+            .attr('text-anchor', 'end')
+            .attr('fill', lineColor)
+            .attr('font-size', '9.5px')
+            .attr('font-weight', '600')
+            .attr('font-family', 'ui-monospace, SFMono-Regular, Menlo, monospace')
+            .text(
+              `Alert ${alert.condition === 'above' ? '≥' : '≤'} ${formatTokenPrice(
+                alert.targetPriceUsd
+              )}${alert.status === 'triggered' ? ' (TRIGGERED)' : ''}`
+            );
+        }
+      });
     }
 
     // ========================================================================
@@ -642,7 +697,7 @@ export const D3PriceOrderFlowChart: React.FC<{ report: TokenScanReport }> = ({ r
       .on('mouseleave touchend', () => {
         setHoveredIndex(null);
       });
-  }, [series, containerWidth, layerMode, hoveredIndex]);
+  }, [series, containerWidth, layerMode, hoveredIndex, alerts, report.token.networkId, report.token.contractAddress]);
 
   const hasLivePrice =
     report.market.priceUsd !== null && report.market.priceUsd > 0;

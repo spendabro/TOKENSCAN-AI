@@ -394,3 +394,26 @@ export interface TokenSearchCandidate {
   dexId: string;
   pairAddress: string;
 }
+
+export type PriceAlertCondition = 'above' | 'below';
+
+export interface PriceAlert {
+  id: string;
+  scanId?: string;
+  networkId: NetworkId;
+  contractAddress: string;
+  tokenName: string;
+  tokenSymbol: string;
+  condition: PriceAlertCondition;
+  targetPriceUsd: number;
+  baselinePriceUsd: number;
+  lastCheckedPriceUsd: number | null;
+  lastCheckedAt: string | null;
+  status: 'active' | 'triggered';
+  triggeredAt: string | null;
+  triggeredPriceUsd: number | null;
+  createdAt: string;
+  note?: string;
+  unreadNotification?: boolean;
+}
+

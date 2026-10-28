@@ -343,19 +343,21 @@ export const TopBar: React.FC<NavigationProps> = ({
     currentUser.displayName || currentUser.email?.split('@')[0] || 'Analyst';
 
   return (
-    <header className="sticky top-0 z-30 h-16 px-4 lg:px-8 border-b border-[#1E2040] bg-[#080817]/95 backdrop-blur-md flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 min-h-14 sm:h-16 px-3 sm:px-6 lg:px-8 py-2 sm:py-0 border-b border-[#1E2040] bg-[#080817]/95 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-4">
       {/* Left: Mobile Brand + Context Title */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2.5 min-w-0 shrink-0">
         <button
           onClick={() => onSelectTab('dashboard')}
-          className="lg:hidden flex items-center gap-2 shrink-0"
+          className="lg:hidden flex items-center gap-2 shrink-0 cursor-pointer"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8B5CF6] to-[#22D3EE] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8B5CF6] to-[#22D3EE] flex items-center justify-center shrink-0">
             <Shield className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold text-sm text-[#F8FAFC] whitespace-nowrap">TokenLens</span>
+          <span className="font-bold text-sm text-[#F8FAFC] whitespace-nowrap">
+            TokenLens
+          </span>
         </button>
-        <h1 className="text-base lg:text-lg font-semibold text-[#F8FAFC] truncate">
+        <h1 className="hidden sm:block text-sm lg:text-lg font-semibold text-[#F8FAFC] truncate">
           {tabTitleMap[activeTab]}
         </h1>
       </div>
@@ -386,8 +388,8 @@ export const TopBar: React.FC<NavigationProps> = ({
       </form>
 
       {/* Right: Active Network Selector, Demo Mode button, Help, Theme, User Sign Out */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="relative flex items-center">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+        <div className="relative flex items-center min-w-0">
           <label htmlFor="top-network-select" className="sr-only">
             Select Active Blockchain Network
           </label>
@@ -395,24 +397,25 @@ export const TopBar: React.FC<NavigationProps> = ({
             id="top-network-select"
             value={selectedNetwork}
             onChange={(e) => onSelectNetwork(e.target.value as NetworkId)}
-            className="bg-[#15162D] border border-[#25274D] hover:border-[#8B5CF6]/60 text-xs font-medium text-[#F8FAFC] rounded-xl px-3 py-2 focus:outline-none focus:border-[#8B5CF6] cursor-pointer"
+            className="w-[122px] sm:w-auto bg-[#15162D] border border-[#25274D] hover:border-[#8B5CF6]/60 text-[11px] sm:text-xs font-medium text-[#F8FAFC] rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus:border-[#8B5CF6] cursor-pointer truncate"
           >
             <optgroup label="MVP Networks (Full Security Stack)">
-              <option value="ethereum">Ethereum Mainnet (ETH)</option>
-              <option value="bsc">BNB Smart Chain (BSC)</option>
-              <option value="base">Base Mainnet (BASE)</option>
+              <option value="ethereum">Ethereum (ETH)</option>
+              <option value="bsc">BNB Chain (BSC)</option>
+              <option value="base">Base (BASE)</option>
             </optgroup>
-            <optgroup label="Expansion Networks (Partial Providers)">
-              <option value="arbitrum">Arbitrum One (ARB)</option>
-              <option value="polygon">Polygon PoS (POL)</option>
+            <optgroup label="Expansion Networks">
+              <option value="hyperliquid">Hyperliquid (HYPE)</option>
               <option value="solana">Solana (SOL)</option>
+              <option value="arbitrum">Arbitrum (ARB)</option>
+              <option value="polygon">Polygon (POL)</option>
             </optgroup>
           </select>
         </div>
 
         <button
           onClick={onToggleDemoMode}
-          className={`px-3 py-2 rounded-xl text-xs font-medium border transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+          className={`p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border transition-colors whitespace-nowrap flex items-center gap-1.5 shrink-0 cursor-pointer ${
             demoMode
               ? 'bg-[#F59E0B]/15 border-[#F59E0B]/50 text-[#F59E0B]'
               : 'bg-[#15162D] border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC]'
@@ -427,7 +430,7 @@ export const TopBar: React.FC<NavigationProps> = ({
           onClick={() => onSelectTab('signals')}
           aria-label="Open Security Signals & Glossary Help"
           title="Security Signals & Glossary"
-          className="p-2 rounded-xl bg-[#15162D] border border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+          className="hidden sm:inline-flex p-2 rounded-xl bg-[#15162D] border border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors shrink-0 cursor-pointer"
         >
           <HelpCircle className="w-4 h-4" />
         </button>
@@ -436,7 +439,7 @@ export const TopBar: React.FC<NavigationProps> = ({
           onClick={onToggleLightMode}
           aria-label={lightMode ? 'Switch to Dark Mode' : 'Switch to High-Contrast Slate Mode'}
           title="Toggle surface contrast theme"
-          className="p-2 rounded-xl bg-[#15162D] border border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+          className="p-2 rounded-xl bg-[#15162D] border border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors shrink-0 cursor-pointer"
         >
           {lightMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </button>
@@ -446,7 +449,7 @@ export const TopBar: React.FC<NavigationProps> = ({
           type="button"
           onClick={onSignOut}
           title={`Signed in as ${displayName} — Click to Sign Out`}
-          className="lg:hidden p-2 rounded-xl bg-[#15162D] border border-[#25274D] text-[#94A3B8] hover:text-[#EF4444] transition-colors"
+          className="lg:hidden p-2 rounded-xl bg-[#15162D] border border-[#25274D] text-[#94A3B8] hover:text-[#EF4444] transition-colors shrink-0 cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
         </button>
@@ -468,13 +471,13 @@ export const MobileBottomNav: React.FC<{
     { id: 'scanner', label: 'Scan', icon: ScanSearch },
     { id: 'explore', label: 'Explore', icon: Compass },
     { id: 'bookmarks', label: 'Saved', icon: Bookmark },
-    { id: 'docs', label: 'Guide', icon: FileText },
+    { id: 'signals', label: 'Signals', icon: BookOpen },
   ];
 
   return (
     <nav
       aria-label="Mobile Bottom Navigation"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 h-14 bg-[#0B0C1E]/95 backdrop-blur-md border-t border-[#1E2040] flex items-center justify-around px-2"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 h-16 bg-[#0B0C1E]/95 backdrop-blur-md border-t border-[#1E2040] grid grid-cols-5 items-center px-1"
     >
       {mobileItems.map((item) => {
         const Icon = item.icon;
@@ -483,12 +486,12 @@ export const MobileBottomNav: React.FC<{
           <button
             key={item.id}
             onClick={() => onSelectTab(item.id)}
-            className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[11px] font-medium transition-colors ${
+            className={`flex flex-col items-center justify-center py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
               isActive ? 'text-[#A78BFA]' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
             <Icon className="w-4 h-4 mb-0.5" />
-            <span>{item.label}</span>
+            <span className="truncate">{item.label}</span>
           </button>
         );
       })}

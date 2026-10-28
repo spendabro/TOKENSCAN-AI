@@ -31,7 +31,15 @@ function checkRateLimit(ip: string, maxRequests = 40, windowMs = 60_000): boolea
 }
 
 const ScanRequestSchema = z.object({
-  networkId: z.enum(['ethereum', 'bsc', 'base', 'arbitrum', 'polygon', 'solana']),
+  networkId: z.enum([
+    'ethereum',
+    'bsc',
+    'base',
+    'arbitrum',
+    'polygon',
+    'solana',
+    'hyperliquid',
+  ]),
   contractAddress: z.string().min(10).max(100),
   forceRescan: z.boolean().optional(),
 });

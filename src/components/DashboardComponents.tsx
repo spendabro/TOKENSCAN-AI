@@ -130,7 +130,7 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
   };
 
   return (
-    <section className="relative rounded-2xl bg-gradient-to-br from-[#12132C] via-[#101126] to-[#17143A] border border-[#25274D] p-6 lg:p-8 overflow-hidden shadow-xl">
+    <section className="relative rounded-2xl bg-gradient-to-br from-[#12132C] via-[#101126] to-[#17143A] border border-[#25274D] p-4 sm:p-6 lg:p-8 overflow-hidden shadow-xl">
       {/* Subtle Ambient Purple/Indigo Glow */}
       <div
         aria-hidden="true"
@@ -141,14 +141,14 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
         className="pointer-events-none absolute -bottom-24 left-1/3 w-80 h-80 rounded-full bg-[#22D3EE]/10 blur-3xl"
       />
 
-      <div className="relative z-10 grid grid-cols-1 xl:grid-cols-12 gap-8 items-center">
+      <div className="relative z-10 grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 items-center">
         {/* Left 7 Columns: Scanner Input & Quick Controls */}
-        <div className="xl:col-span-7 space-y-5">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#A78BFA] font-medium">
+        <div className="xl:col-span-7 space-y-4 sm:space-y-5 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] sm:text-xs text-[#A78BFA] font-medium">
             <span>Gemma 4 Grounded Security Intelligence</span>
             <span aria-hidden="true">·</span>
             <span className="text-[#94A3B8]">
-              Ethereum, BNB Smart Chain, Base + Multi-Chain Support
+              Ethereum, BNB Chain, Base, Hyperliquid, Solana &amp; Multi-Chain
             </span>
           </div>
 
@@ -156,7 +156,7 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#F8FAFC] leading-tight">
               Scan any token. Understand the risks.
             </h2>
-            <p className="text-sm sm:text-base text-[#94A3B8] max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-base text-[#94A3B8] max-w-2xl leading-relaxed">
               Explore smart-contract permissions, trading restrictions, liquidity conditions, and
               security signals with AI-powered explanations.
             </p>
@@ -166,7 +166,7 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
           <form onSubmit={handleFormSubmit} className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-2.5">
               {/* Network Selector */}
-              <div className="sm:w-48 shrink-0">
+              <div className="w-full sm:w-52 shrink-0">
                 <label htmlFor="hero-network-select" className="sr-only">
                   Blockchain Network
                 </label>
@@ -175,7 +175,7 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
                   value={selectedNetwork}
                   onChange={(e) => onSelectNetwork(e.target.value as NetworkId)}
                   disabled={isScanning}
-                  className="w-full h-12 px-3.5 rounded-xl bg-[#080817]/90 border border-[#2A2D5A] focus:border-[#8B5CF6] text-xs sm:text-sm font-medium text-[#F8FAFC] focus:outline-none transition-colors"
+                  className="w-full h-11 sm:h-12 px-3.5 rounded-xl bg-[#080817]/90 border border-[#2A2D5A] focus:border-[#8B5CF6] text-xs sm:text-sm font-medium text-[#F8FAFC] focus:outline-none transition-colors cursor-pointer"
                 >
                   <optgroup label="MVP Priority Networks">
                     <option value="ethereum">Ethereum (ETH)</option>
@@ -183,28 +183,31 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
                     <option value="base">Base (BASE)</option>
                   </optgroup>
                   <optgroup label="Expansion Networks">
+                    <option value="hyperliquid">Hyperliquid (HYPE)</option>
+                    <option value="solana">Solana (SOL)</option>
                     <option value="arbitrum">Arbitrum (ARB)</option>
                     <option value="polygon">Polygon (POL)</option>
-                    <option value="solana">Solana (SOL)</option>
                   </optgroup>
                 </select>
               </div>
 
               {/* Contract Address / Token Resolver Input */}
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-[#94A3B8] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <div className="relative flex-1 min-w-0">
+                <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={addressInput}
                   onChange={(e) => onAddressInputChange(e.target.value)}
                   disabled={isScanning}
                   placeholder={
-                    activeNet.isEvm
-                      ? `Paste ${activeNet.shortName} contract address (0x...) or search token name`
-                      : 'Paste Solana token mint address (Base58) or search token'
+                    selectedNetwork === 'hyperliquid'
+                      ? 'Paste Hyperliquid CA / Spot ID (0x...) or search token'
+                      : activeNet.isEvm
+                        ? `Paste ${activeNet.shortName} contract address (0x...) or search token`
+                        : 'Paste Solana token mint address (Base58) or search token'
                   }
                   aria-label="Token contract address or name search"
-                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-[#080817]/90 border border-[#2A2D5A] focus:border-[#8B5CF6] text-xs sm:text-sm text-[#F8FAFC] placeholder-[#94A3B8] font-mono focus:outline-none transition-colors"
+                  className="w-full h-11 sm:h-12 pl-10 pr-3.5 rounded-xl bg-[#080817]/90 border border-[#2A2D5A] focus:border-[#8B5CF6] text-xs sm:text-sm text-[#F8FAFC] placeholder-[#94A3B8] font-mono focus:outline-none transition-colors"
                 />
               </div>
 
@@ -212,7 +215,7 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
               <button
                 type="submit"
                 disabled={isScanning}
-                className="h-12 px-6 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#6D28D9] disabled:opacity-60 text-sm font-semibold text-white shadow-lg shadow-[#8B5CF6]/25 transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
+                className="w-full sm:w-auto h-11 sm:h-12 px-6 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#6D28D9] disabled:opacity-60 text-sm font-semibold text-white shadow-lg shadow-[#8B5CF6]/25 transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
               >
                 {isScanning ? (
                   <>
@@ -520,8 +523,10 @@ export const AnalyticsCards: React.FC<{
     },
     {
       title: 'Supported Networks',
-      value: stats ? `${stats.mvpNetworksCount} MVP / ${stats.supportedNetworksCount} Total` : '3 MVP / 6 Total',
-      subtitle: 'ETH, BSC, Base + ARB, Polygon, Solana',
+      value: stats
+        ? `${stats.mvpNetworksCount} MVP / ${stats.supportedNetworksCount} Total`
+        : '3 MVP / 7 Total',
+      subtitle: 'ETH, BSC, Base + Hyperliquid, SOL, ARB, POL',
       icon: Layers,
       accent: 'from-[#22D3EE]/20 to-transparent',
       iconColor: 'text-[#22D3EE]',
@@ -529,7 +534,10 @@ export const AnalyticsCards: React.FC<{
   ];
 
   return (
-    <section aria-label="Platform Security Metrics" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <section
+      aria-label="Platform Security Metrics"
+      className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+    >
       {cards.map((card) => {
         const Icon = card.icon;
         return (
@@ -670,21 +678,21 @@ export const TokenExplorerTable: React.FC<TokenExplorerTableProps> = ({
   return (
     <section className="rounded-2xl bg-[#15162D] border border-[#23254A] overflow-hidden">
       {/* Toolbar: Filter Tabs + Search + Network Filter */}
-      <div className="p-4 sm:p-5 border-b border-[#23254A] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-[#0B0C1E] rounded-xl border border-[#1E2040]">
+      <div className="p-3.5 sm:p-5 border-b border-[#23254A] flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-1 p-1 bg-[#0B0C1E] rounded-xl border border-[#1E2040] overflow-x-auto">
           <button
             type="button"
             onClick={() => {
               setRiskFilter('all');
               setPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
               riskFilter === 'all'
                 ? 'bg-[#8B5CF6] text-white'
                 : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
-            All Scanned Tokens ({reports.length})
+            All Scanned ({reports.length})
           </button>
           <button
             type="button"
@@ -692,13 +700,13 @@ export const TokenExplorerTable: React.FC<TokenExplorerTableProps> = ({
               setRiskFilter('flagged');
               setPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
               riskFilter === 'flagged'
                 ? 'bg-[#8B5CF6] text-white'
                 : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
-            With Risk Indicators
+            Risk Indicators
           </button>
           <button
             type="button"
@@ -706,17 +714,17 @@ export const TokenExplorerTable: React.FC<TokenExplorerTableProps> = ({
               setRiskFilter('low');
               setPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
               riskFilter === 'low'
                 ? 'bg-[#8B5CF6] text-white'
                 : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
-            Low Observed Risk
+            Low Risk
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="relative flex-1 sm:w-64">
             <Search className="w-3.5 h-3.5 text-[#94A3B8] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -728,7 +736,7 @@ export const TokenExplorerTable: React.FC<TokenExplorerTableProps> = ({
               }}
               placeholder="Filter by name, symbol, or 0x..."
               aria-label="Filter token explorer table"
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#0B0C1E] border border-[#23254A] focus:border-[#8B5CF6] text-xs text-[#F8FAFC] placeholder-[#94A3B8] focus:outline-none"
+              className="w-full pl-9 pr-3 py-2 sm:py-1.5 rounded-xl bg-[#0B0C1E] border border-[#23254A] focus:border-[#8B5CF6] text-xs text-[#F8FAFC] placeholder-[#94A3B8] focus:outline-none"
             />
           </div>
 
@@ -739,15 +747,16 @@ export const TokenExplorerTable: React.FC<TokenExplorerTableProps> = ({
               setPage(1);
             }}
             aria-label="Filter by blockchain network"
-            className="px-3 py-1.5 rounded-xl bg-[#0B0C1E] border border-[#23254A] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#8B5CF6]"
+            className="px-3 py-2 sm:py-1.5 rounded-xl bg-[#0B0C1E] border border-[#23254A] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#8B5CF6] cursor-pointer"
           >
             <option value="all">All Networks</option>
             <option value="ethereum">Ethereum</option>
             <option value="bsc">BNB Chain</option>
             <option value="base">Base</option>
+            <option value="hyperliquid">Hyperliquid</option>
+            <option value="solana">Solana</option>
             <option value="arbitrum">Arbitrum</option>
             <option value="polygon">Polygon</option>
-            <option value="solana">Solana</option>
           </select>
         </div>
       </div>
@@ -988,34 +997,59 @@ export const TokenExplorerTable: React.FC<TokenExplorerTableProps> = ({
                 onClick={() => onOpenReport(report.scanId)}
                 className="p-4 space-y-3 hover:bg-[#1A1C3A]/60 transition-colors cursor-pointer"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <div className="font-semibold text-sm text-[#F8FAFC]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-[#F8FAFC] truncate">
                       {report.token.name}{' '}
                       <span className="text-[#A78BFA] font-mono">({report.token.symbol})</span>
                     </div>
-                    <div className="text-[11px] text-[#94A3B8] font-mono">
-                      {netCfg.shortName} · {shortenAddress(report.token.contractAddress)}
+                    <div className="text-[11px] text-[#94A3B8] font-mono mt-0.5">
+                      <span className="text-[#22D3EE]">{netCfg.shortName}</span> ·{' '}
+                      {shortenAddress(report.token.contractAddress)}
                     </div>
                   </div>
-                  <div className={`text-xs font-semibold ${classStyle.text}`}>
+                  <div className={`text-xs font-semibold shrink-0 ${classStyle.text}`}>
                     {classStyle.shortLabel}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs font-mono tabular-nums bg-[#0B0C1E] p-2.5 rounded-xl border border-[#1E2040]">
+                <div className="grid grid-cols-2 gap-2 text-xs font-mono tabular-nums bg-[#0B0C1E] p-2.5 rounded-xl border border-[#1E2040]">
                   <div>
                     <div className="text-[10px] text-[#94A3B8]">Price</div>
-                    <div className="text-[#F8FAFC]">{formatTokenPrice(report.market.priceUsd)}</div>
+                    <div className="text-[#F8FAFC] font-bold">
+                      {formatTokenPrice(report.market.priceUsd)}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-[#94A3B8]">Liquidity</div>
-                    <div className="text-[#F8FAFC]">{formatUsd(report.market.liquidityUsd)}</div>
+                    <div className="text-[10px] text-[#94A3B8]">Market Cap (MC)</div>
+                    <div className="text-[#F8FAFC] font-bold">
+                      {formatUsd(report.market.marketCapUsd ?? report.market.fdvUsd)}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-[#94A3B8]">Coverage</div>
-                    <div className="text-[#22C55E]">{report.riskOverview.dataCoveragePercent}%</div>
+                    <div className="text-[10px] text-[#94A3B8]">DEX Liquidity</div>
+                    <div className="text-[#22D3EE] font-bold">
+                      {formatUsd(report.market.liquidityUsd)}
+                    </div>
                   </div>
+                  <div>
+                    <div className="text-[10px] text-[#94A3B8]">Buy / Sell Tax</div>
+                    <div className="text-[#F8FAFC]">
+                      {report.trading.buyTaxPercent !== null ? `${report.trading.buyTaxPercent}%` : '-'} /{' '}
+                      {report.trading.sellTaxPercent !== null ? `${report.trading.sellTaxPercent}%` : '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-[#94A3B8] pt-0.5">
+                  <span>
+                    {report.riskOverview.criticalCount} Crit · {report.riskOverview.highCount} High ·{' '}
+                    {report.riskOverview.dataCoveragePercent}% Coverage
+                  </span>
+                  <span className="text-[#A78BFA] font-semibold inline-flex items-center gap-0.5">
+                    <span>Open Report</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
                 </div>
               </div>
             );

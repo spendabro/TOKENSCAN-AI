@@ -55,6 +55,19 @@ const CHAIN_MAP: Partial<Record<NetworkId, { chain: Chain; rpcUrls: string[] }>>
       'https://polygon-rpc.com',
     ],
   },
+  hyperliquid: {
+    chain: {
+      id: 999,
+      name: 'Hyperliquid EVM',
+      nativeCurrency: { name: 'Hyperliquid', symbol: 'HYPE', decimals: 18 },
+      rpcUrls: {
+        default: { http: ['https://rpc.hyperliquid.xyz/evm'] },
+      },
+    } as Chain,
+    rpcUrls: [
+      process.env.HYPERLIQUID_RPC_URL || 'https://rpc.hyperliquid.xyz/evm',
+    ],
+  },
 };
 
 export interface OnChainTokenMetadata {
@@ -77,6 +90,28 @@ export function validateContractAddress(
   const net = SUPPORTED_NETWORKS[networkId];
   if (!net) {
     return { valid: false, normalizedAddress: trimmed, error: 'Unsupported blockchain network.' };
+  }
+
+  if (networkId === 'hyperliquid') {
+    // Support both HyperEVM 42-char 0x contract addresses AND Hyperliquid L1 34-char 0x HIP-1 token IDs
+    const isHyperSpotId = /^0x[a-fA-F0-9]{32}$/.test(trimmed);
+    const isHyperEvmAddr = /^0x[a-fA-F0-9]{40}$/.test(trimmed);
+    if (!isHyperSpotId && !isHyperEvmAddr) {
+      return {
+        valid: false,
+        normalizedAddress: trimmed,
+        error:
+          'Invalid Hyperliquid address. Expected a 42-character HyperEVM contract address (0x...) or a 34-character Hyperliquid Spot Token ID (0x...).',
+      };
+    }
+    if (isHyperEvmAddr && isAddress(trimmed, { strict: false })) {
+      try {
+        return { valid: true, normalizedAddress: getAddress(trimmed.toLowerCase()) };
+      } catch {
+        return { valid: true, normalizedAddress: trimmed.toLowerCase() };
+      }
+    }
+    return { valid: true, normalizedAddress: trimmed.toLowerCase() };
   }
 
   if (net.isEvm) {
@@ -124,6 +159,26 @@ export async function fetchOnChainMetadata(
 ): Promise<OnChainTokenMetadata> {
   const startTime = Date.now();
   const net = SUPPORTED_NETWORKS[networkId];
+
+  if (networkId === 'hyperliquid' && contractAddress.length === 34) {
+    return {
+      normalizedAddress: contractAddress,
+      isContractDeployed: true,
+      bytecodeLength: null,
+      name: null,
+      symbol: null,
+      decimals: 18,
+      totalSupplyFormatted: null,
+      ownerAddress: null,
+      provenance: {
+        provider: 'On-Chain RPC (viem)',
+        status: 'unsupported',
+        latencyMs: Date.now() - startTime,
+        observedAt: new Date().toISOString(),
+        note: 'Hyperliquid L1 HIP-1 Native Spot Token ID detected. Metadata and orderbook/AMM pools resolved via DEX Screener.',
+      },
+    };
+  }
 
   if (!net.isEvm || !net.rpcSupported) {
     return {

@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
-export type NetworkId = 'ethereum' | 'bsc' | 'base' | 'arbitrum' | 'polygon' | 'solana';
+export type NetworkId =
+  | 'ethereum'
+  | 'bsc'
+  | 'base'
+  | 'arbitrum'
+  | 'polygon'
+  | 'solana'
+  | 'hyperliquid';
 
 export interface NetworkConfig {
   id: NetworkId;
@@ -122,6 +129,23 @@ export const SUPPORTED_NETWORKS: Record<NetworkId, NetworkConfig> = {
     tier: 'Expansion',
     badgeColor: '#14F195',
   },
+  hyperliquid: {
+    id: 'hyperliquid',
+    chainId: '999',
+    numericChainId: 999,
+    name: 'Hyperliquid (HyperEVM / Spot)',
+    shortName: 'HYPE',
+    nativeCurrency: 'HYPE',
+    explorerUrl: 'https://hyperevmscan.io',
+    explorerName: 'HyperEVMScan',
+    goplusChainId: '999',
+    dexScreenerId: 'hyperliquid',
+    honeypotSupported: false,
+    rpcSupported: true,
+    isEvm: true,
+    tier: 'Expansion',
+    badgeColor: '#50D2C1',
+  },
 };
 
 export type SeverityLevel =
@@ -176,6 +200,8 @@ export interface LiquidityPoolInfo {
   priceUsd: number | null;
   liquidityUsd: number;
   volume24hUsd: number;
+  buys24h?: number | null;
+  sells24h?: number | null;
   pairCreatedAt: string | null;
   url?: string;
 }
@@ -229,6 +255,11 @@ export interface MarketSnapshotData {
   volume24hUsd: number | null;
   marketCapUsd: number | null;
   fdvUsd: number | null;
+  buys24h?: number | null;
+  sells24h?: number | null;
+  buys1h?: number | null;
+  sells1h?: number | null;
+  buyPressure24hPercent?: number | null;
   pairCount: number;
   oldestPairCreatedAt: string | null;
   primaryDex: string | null;

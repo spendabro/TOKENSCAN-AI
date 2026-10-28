@@ -49,6 +49,7 @@ import {
   getSeverityStyles,
   getClassificationStyles,
 } from '../utils/formatters.ts';
+import { XShareCardStudio } from './XShareCardStudio.tsx';
 
 interface ReportViewProps {
   report: TokenScanReport;
@@ -289,17 +290,17 @@ export const ReportView: React.FC<ReportViewProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Back Button & Breadcrumb */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <button
           type="button"
           onClick={onBackToDashboard}
           className="inline-flex items-center gap-2 text-xs font-medium text-[#94A3B8] hover:text-[#F8FAFC] transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Scanner &amp; Token Explorer</span>
+          <ArrowLeft className="w-4 h-4 shrink-0" />
+          <span>Back to Scanner &amp; Explorer</span>
         </button>
 
-        <div className="text-xs text-[#94A3B8] font-mono">
+        <div className="text-[11px] sm:text-xs text-[#94A3B8] font-mono truncate max-w-full">
           Report ID: <span className="text-[#F8FAFC]">{report.scanId}</span>
         </div>
       </div>
@@ -335,10 +336,10 @@ export const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {/* 1. REPORT HEADER */}
-      <section className="rounded-2xl bg-[#15162D] border border-[#25274D] p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#8B5CF6]/30 to-[#22D3EE]/30 border border-[#2A2D5A] flex items-center justify-center font-bold text-lg text-[#F8FAFC] shrink-0 overflow-hidden">
+      <section className="rounded-2xl bg-[#15162D] border border-[#25274D] p-4 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-6">
+          <div className="flex items-start gap-3.5 sm:gap-4 min-w-0">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-[#8B5CF6]/30 to-[#22D3EE]/30 border border-[#2A2D5A] flex items-center justify-center font-bold text-base sm:text-lg text-[#F8FAFC] shrink-0 overflow-hidden">
               {report.token.logoUrl ? (
                 <img
                   src={report.token.logoUrl}
@@ -351,12 +352,12 @@ export const ReportView: React.FC<ReportViewProps> = ({
               )}
             </div>
 
-            <div className="space-y-1.5 min-w-0">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h2 className="text-xl sm:text-2xl font-bold text-[#F8FAFC]">
+            <div className="space-y-1.5 min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg sm:text-2xl font-bold text-[#F8FAFC] break-words">
                   {report.token.name}
                 </h2>
-                <span className="text-sm font-mono font-semibold text-[#A78BFA]">
+                <span className="text-xs sm:text-sm font-mono font-semibold text-[#A78BFA]">
                   ({report.token.symbol})
                 </span>
                 <span className="text-[#94A3B8]">·</span>
@@ -365,7 +366,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
 
               {/* Contract Address Bar */}
               <div className="flex flex-wrap items-center gap-2 text-xs text-[#94A3B8]">
-                <span className="font-mono text-[#F8FAFC] bg-[#0B0C1E] px-2.5 py-1 rounded-lg border border-[#1E2040] break-all">
+                <span className="font-mono text-[11px] sm:text-xs text-[#F8FAFC] bg-[#0B0C1E] px-2.5 py-1 rounded-lg border border-[#1E2040] break-all">
                   {report.token.contractAddress}
                 </span>
 
@@ -400,19 +401,25 @@ export const ReportView: React.FC<ReportViewProps> = ({
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs text-[#94A3B8] pt-0.5">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-[#94A3B8] pt-0.5">
                 <span>
-                  Scanned: <strong className="text-[#F8FAFC] font-mono">{new Date(report.scannedAt).toLocaleString()}</strong>
+                  Scanned:{' '}
+                  <strong className="text-[#F8FAFC] font-mono">
+                    {new Date(report.scannedAt).toLocaleString()}
+                  </strong>
                 </span>
                 <span>·</span>
                 <span>
-                  Decimals: <strong className="text-[#F8FAFC] font-mono">{report.token.decimals ?? 'N/A'}</strong>
+                  Decimals:{' '}
+                  <strong className="text-[#F8FAFC] font-mono">
+                    {report.token.decimals ?? 'N/A'}
+                  </strong>
                 </span>
                 {report.token.totalSupplyFormatted && (
                   <>
                     <span>·</span>
                     <span>
-                      Total Supply:{' '}
+                      Supply:{' '}
                       <strong className="text-[#F8FAFC] font-mono">
                         {report.token.totalSupplyFormatted}
                       </strong>
@@ -423,35 +430,47 @@ export const ReportView: React.FC<ReportViewProps> = ({
             </div>
           </div>
 
-          {/* Header Actions: Bookmark, Share, Rescan */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {/* Header Actions: Bookmark, Post on X, Copy Link, Rescan */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 shrink-0 w-full lg:w-auto">
             <button
               type="button"
               onClick={onToggleBookmark}
-              className={`px-3.5 py-2 rounded-xl border text-xs font-medium inline-flex items-center gap-2 transition-colors cursor-pointer ${
+              className={`px-3 py-2 rounded-xl border text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                 isBookmarked
                   ? 'bg-[#8B5CF6]/20 border-[#8B5CF6] text-[#F8FAFC]'
                   : 'bg-[#0B0C1E] border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC]'
               }`}
             >
-              <Bookmark className="w-4 h-4" />
+              <Bookmark className="w-4 h-4 shrink-0" />
               <span>{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
             </button>
 
             <button
               type="button"
+              onClick={() => {
+                const el = document.getElementById('x-share-card-studio');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="px-3 py-2 rounded-xl bg-[#0B0C1E] hover:bg-[#1E2040] border border-[#22D3EE]/50 text-xs font-semibold text-[#22D3EE] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Share2 className="w-4 h-4 text-[#22D3EE] shrink-0" />
+              <span>Post on X</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleShareReport}
-              className="px-3.5 py-2 rounded-xl bg-[#0B0C1E] hover:bg-[#1E2040] border border-[#25274D] text-xs font-medium text-[#F8FAFC] inline-flex items-center gap-2 transition-colors cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-[#0B0C1E] hover:bg-[#1E2040] border border-[#25274D] text-xs font-medium text-[#F8FAFC] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               {copiedShare ? (
                 <>
-                  <Check className="w-4 h-4 text-[#22C55E]" />
-                  <span className="text-[#22C55E]">Share Link Copied!</span>
+                  <Check className="w-4 h-4 text-[#22C55E] shrink-0" />
+                  <span className="text-[#22C55E]">Link Copied!</span>
                 </>
               ) : (
                 <>
-                  <Share2 className="w-4 h-4 text-[#94A3B8]" />
-                  <span>Share Report</span>
+                  <Copy className="w-4 h-4 text-[#94A3B8] shrink-0" />
+                  <span>Copy Link</span>
                 </>
               )}
             </button>
@@ -461,9 +480,9 @@ export const ReportView: React.FC<ReportViewProps> = ({
                 type="button"
                 disabled={isScanning}
                 onClick={() => onRescan(report.token.networkId, report.token.contractAddress)}
-                className="px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-xs font-semibold text-white inline-flex items-center gap-2 transition-colors cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-xs font-semibold text-white inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 shrink-0 ${isScanning ? 'animate-spin' : ''}`} />
                 <span>Rescan Live</span>
               </button>
             )}
@@ -630,6 +649,9 @@ export const ReportView: React.FC<ReportViewProps> = ({
           </div>
         </div>
       </section>
+
+      {/* X (TWITTER) SHAREABLE SCAN RESULT CARD & POST STUDIO */}
+      <XShareCardStudio report={report} />
 
       {/* 3. GEMMA 4 AI SECURITY SUMMARY SECTION */}
       <section className="rounded-2xl bg-gradient-to-br from-[#161735] to-[#121329] border border-[#8B5CF6]/40 p-6 space-y-5">
@@ -928,6 +950,52 @@ export const ReportView: React.FC<ReportViewProps> = ({
                   : 'N/A'}
               </div>
             </div>
+          </div>
+
+          {/* 24h Buy vs Sell Order Flow Rate */}
+          <div className="p-3.5 rounded-xl bg-[#0B0C1E] border border-[#1E2040] space-y-2 font-mono tabular-nums">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[#94A3B8] font-sans font-medium">
+                24h Rate of Buy vs Sell (Order Flow)
+              </span>
+              <span className="text-[#22D3EE] font-semibold">
+                {report.market.buyPressure24hPercent !== undefined &&
+                report.market.buyPressure24hPercent !== null
+                  ? `${report.market.buyPressure24hPercent}% Buy / ${(100 - report.market.buyPressure24hPercent).toFixed(1)}% Sell`
+                  : 'Telemetry Pending'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2 rounded-lg bg-[#101126] border border-[#1E2040] flex items-center justify-between">
+                <span className="text-[#94A3B8]">24h Buys:</span>
+                <span className="text-[#22C55E] font-bold">
+                  {report.market.buys24h !== undefined && report.market.buys24h !== null
+                    ? report.market.buys24h.toLocaleString()
+                    : 'N/A'}
+                </span>
+              </div>
+              <div className="p-2 rounded-lg bg-[#101126] border border-[#1E2040] flex items-center justify-between">
+                <span className="text-[#94A3B8]">24h Sells:</span>
+                <span className="text-[#EF4444] font-bold">
+                  {report.market.sells24h !== undefined && report.market.sells24h !== null
+                    ? report.market.sells24h.toLocaleString()
+                    : 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            {report.market.buyPressure24hPercent !== undefined &&
+              report.market.buyPressure24hPercent !== null && (
+                <div className="h-2 w-full rounded-lg bg-[#EF4444]/80 overflow-hidden flex">
+                  <div
+                    className="h-full bg-[#22C55E]"
+                    style={{
+                      width: `${Math.max(5, Math.min(95, report.market.buyPressure24hPercent))}%`,
+                    }}
+                  />
+                </div>
+              )}
           </div>
 
           <div className="p-3 rounded-xl bg-[#101126] border border-[#23254A] text-[11px] text-[#94A3B8] leading-relaxed">

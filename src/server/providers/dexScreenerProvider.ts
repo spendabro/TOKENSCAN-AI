@@ -34,6 +34,11 @@ export async function fetchDexScreenerMarket(
     volume24hUsd: null,
     marketCapUsd: null,
     fdvUsd: null,
+    buys24h: null,
+    sells24h: null,
+    buys1h: null,
+    sells1h: null,
+    buyPressure24hPercent: null,
     pairCount: 0,
     oldestPairCreatedAt: null,
     primaryDex: null,
@@ -70,11 +75,34 @@ export async function fetchDexScreenerMarket(
     }
 
     const rawData = await response.json();
-    const pairs: any[] = Array.isArray(rawData)
+    let pairs: any[] = Array.isArray(rawData)
       ? rawData
       : Array.isArray(rawData?.pairs)
         ? rawData.pairs
         : [];
+
+    // For Hyperliquid, tokens can be indexed under 'hyperliquid' (L1 Spot) or 'hyperevm' (EVM Chain 999)
+    if (pairs.length === 0 && networkId === 'hyperliquid') {
+      try {
+        const fallbackUrl = `https://api.dexscreener.com/token-pairs/v1/hyperevm/${encodeURIComponent(
+          contractAddress
+        )}`;
+        const fbRes = await fetch(fallbackUrl, {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        });
+        if (fbRes.ok) {
+          const fbData = await fbRes.json();
+          pairs = Array.isArray(fbData)
+            ? fbData
+            : Array.isArray(fbData?.pairs)
+              ? fbData.pairs
+              : [];
+        }
+      } catch {
+        // ignore fallback error
+      }
+    }
 
     if (pairs.length === 0) {
       return {
@@ -105,6 +133,11 @@ export async function fetchDexScreenerMarket(
 
     let totalLiquidityUsd = 0;
     let totalVolume24hUsd = 0;
+    let totalBuys24h = 0;
+    let totalSells24h = 0;
+    let totalBuys1h = 0;
+    let totalSells1h = 0;
+    let hasTxnData = false;
     let oldestTimestampMs: number | null = null;
 
     const pools: LiquidityPoolInfo[] = sortedPairs.slice(0, 8).map((p) => {
@@ -112,6 +145,28 @@ export async function fetchDexScreenerMarket(
       const vol = Number(p?.volume?.h24 || 0);
       totalLiquidityUsd += liq;
       totalVolume24hUsd += vol;
+
+      const pBuys24h =
+        p?.txns?.h24?.buys !== undefined && p?.txns?.h24?.buys !== null
+          ? Number(p.txns.h24.buys)
+          : null;
+      const pSells24h =
+        p?.txns?.h24?.sells !== undefined && p?.txns?.h24?.sells !== null
+          ? Number(p.txns.h24.sells)
+          : null;
+
+      if (pBuys24h !== null || pSells24h !== null) {
+        hasTxnData = true;
+        totalBuys24h += pBuys24h || 0;
+        totalSells24h += pSells24h || 0;
+      }
+
+      if (p?.txns?.h1?.buys !== undefined) {
+        totalBuys1h += Number(p.txns.h1.buys || 0);
+      }
+      if (p?.txns?.h1?.sells !== undefined) {
+        totalSells1h += Number(p.txns.h1.sells || 0);
+      }
 
       if (p?.pairCreatedAt && typeof p.pairCreatedAt === 'number') {
         if (oldestTimestampMs === null || p.pairCreatedAt < oldestTimestampMs) {
@@ -127,6 +182,8 @@ export async function fetchDexScreenerMarket(
         priceUsd: p?.priceUsd ? Number(p.priceUsd) : null,
         liquidityUsd: Number(liq.toFixed(2)),
         volume24hUsd: Number(vol.toFixed(2)),
+        buys24h: pBuys24h,
+        sells24h: pSells24h,
         pairCreatedAt:
           p?.pairCreatedAt && typeof p.pairCreatedAt === 'number'
             ? new Date(p.pairCreatedAt).toISOString()
@@ -135,10 +192,24 @@ export async function fetchDexScreenerMarket(
       };
     });
 
-    // Aggregate remaining pairs' liquidity/volume if more than 8 pairs
+    // Aggregate remaining pairs' liquidity/volume/txns if more than 8 pairs
     for (let i = 8; i < sortedPairs.length; i++) {
       totalLiquidityUsd += Number(sortedPairs[i]?.liquidity?.usd || 0);
       totalVolume24hUsd += Number(sortedPairs[i]?.volume?.h24 || 0);
+      if (sortedPairs[i]?.txns?.h24?.buys !== undefined) {
+        hasTxnData = true;
+        totalBuys24h += Number(sortedPairs[i].txns.h24.buys || 0);
+      }
+      if (sortedPairs[i]?.txns?.h24?.sells !== undefined) {
+        hasTxnData = true;
+        totalSells24h += Number(sortedPairs[i].txns.h24.sells || 0);
+      }
+      if (sortedPairs[i]?.txns?.h1?.buys !== undefined) {
+        totalBuys1h += Number(sortedPairs[i].txns.h1.buys || 0);
+      }
+      if (sortedPairs[i]?.txns?.h1?.sells !== undefined) {
+        totalSells1h += Number(sortedPairs[i].txns.h1.sells || 0);
+      }
     }
 
     // Keep Market Cap and FDV strictly distinct per Section 8E
@@ -149,6 +220,12 @@ export async function fetchDexScreenerMarket(
     const fdvUsd =
       primaryPair?.fdv !== undefined && primaryPair?.fdv !== null
         ? Number(primaryPair.fdv)
+        : null;
+
+    const totalTxns24h = totalBuys24h + totalSells24h;
+    const buyPressure24hPercent =
+      hasTxnData && totalTxns24h > 0
+        ? Number(((totalBuys24h / totalTxns24h) * 100).toFixed(1))
         : null;
 
     return {
@@ -173,6 +250,11 @@ export async function fetchDexScreenerMarket(
         volume24hUsd: Number(totalVolume24hUsd.toFixed(2)),
         marketCapUsd,
         fdvUsd,
+        buys24h: hasTxnData ? totalBuys24h : null,
+        sells24h: hasTxnData ? totalSells24h : null,
+        buys1h: hasTxnData ? totalBuys1h : null,
+        sells1h: hasTxnData ? totalSells1h : null,
+        buyPressure24hPercent,
         pairCount: pairs.length,
         oldestPairCreatedAt: oldestTimestampMs
           ? new Date(oldestTimestampMs).toISOString()
@@ -185,7 +267,7 @@ export async function fetchDexScreenerMarket(
         status: 'success',
         latencyMs: Date.now() - startTime,
         observedAt: new Date().toISOString(),
-        note: `Fetched ${pairs.length} active trading pair(s) and liquidity metrics from DEX Screener.`,
+        note: `Fetched ${pairs.length} active trading pair(s), buy/sell order flow, and liquidity metrics from DEX Screener.`,
       },
     };
   } catch (err: any) {
@@ -216,6 +298,8 @@ const DEX_CHAIN_TO_NETWORK: Record<string, NetworkId> = {
   arbitrum: 'arbitrum',
   polygon: 'polygon',
   solana: 'solana',
+  hyperliquid: 'hyperliquid',
+  hyperevm: 'hyperliquid',
 };
 
 export async function searchTokensByQuery(query: string): Promise<TokenSearchCandidate[]> {

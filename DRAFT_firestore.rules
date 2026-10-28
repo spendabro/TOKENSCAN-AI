@@ -64,7 +64,7 @@ service cloud.firestore {
         data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
         data.uid == request.auth.uid &&
         data.networkId is string && data.networkId.size() <= 20 &&
-        (data.networkId == 'ethereum' || data.networkId == 'bsc' || data.networkId == 'base' || data.networkId == 'arbitrum' || data.networkId == 'polygon' || data.networkId == 'solana') &&
+        (data.networkId == 'ethereum' || data.networkId == 'bsc' || data.networkId == 'base' || data.networkId == 'arbitrum' || data.networkId == 'polygon' || data.networkId == 'solana' || data.networkId == 'hyperliquid') &&
         data.contractAddress is string && data.contractAddress.size() >= 20 && data.contractAddress.size() <= 80 &&
         data.createdAt is timestamp;
     }

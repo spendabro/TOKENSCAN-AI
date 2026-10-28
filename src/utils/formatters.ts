@@ -155,7 +155,7 @@ export function getClassificationStyles(classification: RiskClassification): {
 export const CURATED_QUICK_TOKENS: {
   label: string;
   symbol: string;
-  networkId: 'ethereum' | 'bsc' | 'base';
+  networkId: 'ethereum' | 'bsc' | 'base' | 'hyperliquid';
   address: string;
   note: string;
 }[] = [
@@ -188,10 +188,10 @@ export const CURATED_QUICK_TOKENS: {
     note: 'BNB Smart Chain ecosystem token with mint authority',
   },
   {
-    label: 'Uniswap',
-    symbol: 'UNI',
-    networkId: 'ethereum',
-    address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
-    note: 'Governance token on Ethereum Mainnet',
+    label: 'Hyperliquid HYPE',
+    symbol: 'HYPE',
+    networkId: 'hyperliquid',
+    address: '0x0d01dc56dcaaca66ad901c959b4011ec',
+    note: 'Hyperliquid native ecosystem token',
   },
 ];

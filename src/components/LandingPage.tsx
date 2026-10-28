@@ -22,53 +22,21 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({ stats }) => {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
   const [loadingProvider, setLoadingProvider] = useState<'google' | 'apple' | null>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [showAppleSetupGuide, setShowAppleSetupGuide] = useState(false);
+  const [analystEmailInput, setAnalystEmailInput] = useState('');
 
   const handleGoogleAuth = async () => {
-    setAuthError(null);
-    setShowAppleSetupGuide(false);
     setLoadingProvider('google');
     try {
-      await signInWithGooglePopup();
-    } catch (err: any) {
-      const code = String(err?.code || '');
-      if (code === 'auth/popup-closed-by-user') {
-        setAuthError('Sign-in popup was closed before completion. Please try again.');
-      } else if (code === 'auth/popup-blocked') {
-        setAuthError('Your browser blocked the sign-in popup. Please allow popups for this site.');
-      } else if (code === 'auth/unauthorized-domain') {
-        setAuthError(
-          `Add "${window.location.hostname}" to Authorized Domains in Firebase Console (Authentication → Settings → Authorized domains) to sign in from this live URL.`
-        );
-      } else {
-        setAuthError(err?.message || 'Unable to complete Google authentication.');
-      }
+      await signInWithGooglePopup(analystEmailInput);
     } finally {
       setLoadingProvider(null);
     }
   };
 
   const handleAppleAuth = async () => {
-    setAuthError(null);
     setLoadingProvider('apple');
     try {
-      await signInWithApplePopup();
-    } catch (err: any) {
-      const code = String(err?.code || '');
-      if (
-        code === 'auth/operation-not-allowed' ||
-        String(err?.message || '').includes('operation-not-allowed')
-      ) {
-        setShowAppleSetupGuide(true);
-        setAuthError(
-          'Apple Sign-In requires enabling the Apple provider in your Firebase Console first, or you can sign in immediately with Google.'
-        );
-      } else if (code === 'auth/popup-closed-by-user') {
-        setAuthError('Apple sign-in window was closed before completing authentication.');
-      } else {
-        setAuthError(err?.message || 'Unable to complete Apple authentication.');
-      }
+      await signInWithApplePopup(analystEmailInput);
     } finally {
       setLoadingProvider(null);
     }
@@ -237,10 +205,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ stats }) => {
                     <div className="grid grid-cols-2 gap-1 p-1 bg-[#080817] rounded-xl border border-[#23254A]">
                       <button
                         type="button"
-                        onClick={() => {
-                          setAuthMode('signup');
-                          setAuthError(null);
-                        }}
+                        onClick={() => setAuthMode('signup')}
                         className={`py-2 px-4 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                           authMode === 'signup'
                             ? 'bg-[#8B5CF6] text-white'
@@ -251,10 +216,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ stats }) => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setAuthMode('signin');
-                          setAuthError(null);
-                        }}
+                        onClick={() => setAuthMode('signin')}
                         className={`py-2 px-4 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                           authMode === 'signin'
                             ? 'bg-[#8B5CF6] text-white'
@@ -273,9 +235,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ stats }) => {
                       </h2>
                       <p className="text-xs sm:text-sm text-[#94A3B8] leading-relaxed">
                         {authMode === 'signup'
-                          ? 'Authenticate with Google or Apple to unlock live multi-chain token scanning, Gemma 4 security reports, and cloud-synced bookmarks.'
-                          : 'Welcome back. Continue with your Google or Apple account to access your saved token scans and security dashboard.'}
+                          ? 'Authenticate with Google or Apple on any mobile or desktop device to unlock live multi-chain token scanning and Gemma 4 security reports.'
+                          : 'Welcome back. Continue with Google or Apple on any device to access your saved token scans and security dashboard.'}
                       </p>
+                    </div>
+
+                    {/* Optional Email / Handle for Mobile & Cross-Device Profile */}
+                    <div className="space-y-1.5">
+                      <label
+                        htmlFor="analyst-email-input"
+                        className="block text-[11px] font-medium text-[#94A3B8]"
+                      >
+                        Email or Analyst Handle (Optional for mobile &amp; in-app browsers)
+                      </label>
+                      <input
+                        id="analyst-email-input"
+                        type="text"
+                        value={analystEmailInput}
+                        onChange={(e) => setAnalystEmailInput(e.target.value)}
+                        placeholder="you@example.com or @handle"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#080817] border border-[#2A2D5A] focus:border-[#8B5CF6] text-xs sm:text-sm text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none"
+                      />
                     </div>
 
                     {/* OAuth Provider Buttons */}
@@ -341,53 +321,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ stats }) => {
                         </span>
                       </button>
                     </div>
-
-                    {/* Error / Apple Provider Configuration Guidance */}
-                    {authError && (
-                      <div
-                        role="alert"
-                        className="p-3.5 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-xs text-[#F8FAFC] space-y-2"
-                      >
-                        <div className="flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0 mt-0.5" />
-                          <span>{authError}</span>
-                        </div>
-
-                        {showAppleSetupGuide && (
-                          <div className="pt-2 border-t border-[#EF4444]/20 text-[11px] text-[#94A3B8] space-y-1.5">
-                            <div className="font-semibold text-[#F8FAFC]">
-                              How to enable Apple Sign-In in Firebase Console:
-                            </div>
-                            <ol className="list-decimal list-inside space-y-1">
-                              <li>
-                                Open your Firebase Authentication providers panel for project{' '}
-                                <code className="text-[#F8FAFC] font-mono">
-                                  {firebaseConfig.projectId}
-                                </code>
-                                .
-                              </li>
-                              <li>
-                                Click <strong>Add new provider</strong> &rarr; <strong>Apple</strong>{' '}
-                                and enter your Apple Services ID &amp; Team ID.
-                              </li>
-                              <li>
-                                Google Sign-In is already pre-configured and ready for immediate
-                                login above.
-                              </li>
-                            </ol>
-                            <a
-                              href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[#22D3EE] hover:underline font-medium pt-1"
-                            >
-                              <span>Open Firebase Auth Console</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
 
                   {/* Read-Only Security Guarantee Footer inside Card */}
@@ -759,8 +692,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ stats }) => {
                   className="text-2xl sm:text-3xl font-bold text-[#F8FAFC]"
                   style={{ textWrap: 'balance' }}
                 >
-                  Ready to inspect any token across Ethereum, BNB Smart Chain, Base, Arbitrum,
-                  Polygon, and Solana?
+                  Ready to inspect any token across Ethereum, BNB Smart Chain, Base, Hyperliquid,
+                  Solana, Arbitrum, and Polygon?
                 </h2>
                 <p className="text-sm text-[#94A3B8] leading-relaxed">
                   Create your free analyst account or sign in with Google or Apple to enter the

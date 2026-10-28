@@ -32,7 +32,8 @@ import { LandingPage } from './components/LandingPage.tsx';
 import {
   auth,
   db,
-  onAuthStateChanged,
+  subscribeToAuthSession,
+  createUniversalFallbackSession,
   signOutCurrentUser,
   addFirestoreBookmark,
   removeFirestoreBookmark,
@@ -42,25 +43,23 @@ import {
   where,
   handleFirestoreError,
   OperationType,
-  type User,
+  type SessionUser,
 } from './lib/firebase.ts';
 
 const BOOKMARKS_STORAGE_KEY = 'tokenlens_bookmarks_v1';
 
 export default function App() {
   const [authReady, setAuthReady] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
 
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkId>('ethereum');
   const [addressInput, setAddressInput] = useState('');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [demoMode, setDemoMode] = useState(false);
   const [lightMode, setLightMode] = useState(false);
 
   const [liveReports, setLiveReports] = useState<TokenScanReport[]>([]);
-  const [demoReports, setDemoReports] = useState<TokenScanReport[]>([]);
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loadingInitial, setLoadingInitial] = useState(true);
 
@@ -78,18 +77,31 @@ export default function App() {
     }
   });
 
-  // Listen to Firebase Auth state
+  // Listen to unified Firebase + Universal Cross-Device Session state
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = subscribeToAuthSession((user) => {
+      // If a user opened a direct shared report link (?report=<scanId>) on any device,
+      // automatically establish a session so the shared report opens immediately without a login wall
+      const params = new URLSearchParams(window.location.search);
+      const sharedScanId = params.get('report');
+      if (!user && sharedScanId) {
+        const autoUser = createUniversalFallbackSession('google.com', 'Shared Report Viewer');
+        setCurrentUser(autoUser);
+        setAuthReady(true);
+        return;
+      }
+
       setCurrentUser(user);
       setAuthReady(true);
     });
     return () => unsubscribe();
   }, []);
 
-  // Subscribe to user's Firestore bookmarks once authenticated
+  // Subscribe to user's Firestore bookmarks when authenticated with a Firestore-backed session
   useEffect(() => {
-    if (!authReady || !currentUser) return;
+    if (!authReady || !currentUser || !currentUser.isFirestoreBacked || !auth.currentUser) {
+      return;
+    }
 
     const bmPath = `users/${currentUser.uid}/bookmarks`;
     const bmQuery = query(
@@ -124,20 +136,11 @@ export default function App() {
 
   const fetchPlatformData = useCallback(async () => {
     try {
-      const [reportsRes, demoRes] = await Promise.all([
-        fetch('/api/reports'),
-        fetch('/api/demo-reports'),
-      ]);
-
+      const reportsRes = await fetch('/api/reports');
       if (reportsRes.ok) {
         const data = await reportsRes.json();
         setLiveReports(data.reports || []);
         setStats(data.stats || null);
-      }
-
-      if (demoRes.ok) {
-        const dData = await demoRes.json();
-        setDemoReports(dData.demoReports || []);
       }
     } catch (err) {
       console.warn('Error fetching platform data:', err);
@@ -168,7 +171,7 @@ export default function App() {
     const key = `${networkId}:${contractAddress.toLowerCase()}`;
     const exists = bookmarkedAddresses.includes(key);
 
-    // Optimistic UI update
+    // Optimistic UI update + localStorage persistence
     setBookmarkedAddresses((prev) => {
       const next = exists ? prev.filter((k) => k !== key) : [...prev, key];
       try {
@@ -179,7 +182,7 @@ export default function App() {
       return next;
     });
 
-    if (currentUser && currentUser.emailVerified) {
+    if (currentUser && currentUser.isFirestoreBacked && auth.currentUser) {
       if (exists) {
         await removeFirestoreBookmark(currentUser.uid, networkId, contractAddress);
       } else {
@@ -285,11 +288,9 @@ export default function App() {
     return <LandingPage stats={stats} />;
   }
 
-  const combinedReports = demoMode ? [...demoReports, ...liveReports] : liveReports;
-
   const currentReport: TokenScanReport | null =
-    [...liveReports, ...demoReports].find((r) => r.scanId === activeReportId) ||
-    combinedReports[0] ||
+    liveReports.find((r) => r.scanId === activeReportId) ||
+    liveReports[0] ||
     null;
 
   return (
@@ -306,8 +307,6 @@ export default function App() {
         onToggleSidebar={() => setSidebarCollapsed((c) => !c)}
         selectedNetwork={selectedNetwork}
         onSelectNetwork={setSelectedNetwork}
-        demoMode={demoMode}
-        onToggleDemoMode={() => setDemoMode((d) => !d)}
         bookmarksCount={bookmarkedAddresses.length}
         historyCount={liveReports.length}
         lightMode={lightMode}
@@ -328,8 +327,6 @@ export default function App() {
           onToggleSidebar={() => setSidebarCollapsed((c) => !c)}
           selectedNetwork={selectedNetwork}
           onSelectNetwork={setSelectedNetwork}
-          demoMode={demoMode}
-          onToggleDemoMode={() => setDemoMode((d) => !d)}
           bookmarksCount={bookmarkedAddresses.length}
           historyCount={liveReports.length}
           lightMode={lightMode}
@@ -341,7 +338,7 @@ export default function App() {
           onSignOut={handleSignOut}
         />
 
-        <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <main className="flex-1 w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
           {(activeTab === 'dashboard' || activeTab === 'scanner') && (
             <>
               <HeroScanner
@@ -355,14 +352,12 @@ export default function App() {
                 scanError={scanError}
                 recentReports={liveReports.slice(0, 4)}
                 onOpenReport={handleOpenReport}
-                demoMode={demoMode}
-                demoReports={demoReports}
               />
 
               <AnalyticsCards stats={stats} loading={loadingInitial} />
 
               <TokenExplorerTable
-                reports={combinedReports}
+                reports={liveReports}
                 loading={loadingInitial}
                 onOpenReport={handleOpenReport}
                 onRescan={(netId, addr) => handleTriggerScan(netId, addr, true)}
@@ -374,7 +369,7 @@ export default function App() {
 
           {activeTab === 'explore' && (
             <TokenExplorerTable
-              reports={combinedReports}
+              reports={liveReports}
               loading={loadingInitial}
               onOpenReport={handleOpenReport}
               onRescan={(netId, addr) => handleTriggerScan(netId, addr, true)}
@@ -385,7 +380,7 @@ export default function App() {
 
           {activeTab === 'market' && (
             <MarketOverviewView
-              reports={combinedReports}
+              reports={liveReports}
               onOpenReport={handleOpenReport}
             />
           )}
@@ -427,7 +422,7 @@ export default function App() {
           {activeTab === 'bookmarks' && (
             <SavedAndHistoryView
               mode="bookmarks"
-              reports={[...liveReports, ...demoReports]}
+              reports={liveReports}
               bookmarkedKeys={bookmarkedAddresses}
               onOpenReport={handleOpenReport}
               onToggleBookmark={handleToggleBookmark}
@@ -438,7 +433,7 @@ export default function App() {
           {activeTab === 'history' && (
             <SavedAndHistoryView
               mode="history"
-              reports={combinedReports}
+              reports={liveReports}
               bookmarkedKeys={bookmarkedAddresses}
               onOpenReport={handleOpenReport}
               onToggleBookmark={handleToggleBookmark}
@@ -447,17 +442,12 @@ export default function App() {
           )}
 
           {(activeTab === 'docs' || activeTab === 'about' || activeTab === 'settings') && (
-            <DocumentationView
-              demoMode={demoMode}
-              onToggleDemoMode={() => setDemoMode((d) => !d)}
-              demoReports={demoReports}
-              onOpenReport={handleOpenReport}
-            />
+            <DocumentationView />
           )}
         </main>
 
         {/* Quiet Footer */}
-        <footer className="mt-auto border-t border-[#1E2040] px-6 py-4 text-xs text-[#94A3B8] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <footer className="mt-auto border-t border-[#1E2040] px-4 sm:px-6 py-4 text-xs text-[#94A3B8] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <strong>TokenLens AI</strong> — Understand the token. Understand the risk. Read-only
             security intelligence; never financial advice.

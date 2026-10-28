@@ -11,7 +11,6 @@ import {
   ExternalLink,
   CheckCircle2,
   Loader2,
-  FlaskConical,
   Layers,
   Activity,
   ChevronRight,
@@ -57,8 +56,6 @@ interface HeroScannerProps {
   scanError: string | null;
   recentReports: TokenScanReport[];
   onOpenReport: (scanId: string) => void;
-  demoMode: boolean;
-  demoReports: TokenScanReport[];
 }
 
 export const HeroScanner: React.FC<HeroScannerProps> = ({
@@ -72,8 +69,6 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
   scanError,
   recentReports,
   onOpenReport,
-  demoMode,
-  demoReports,
 }) => {
   const [searchCandidates, setSearchCandidates] = useState<TokenSearchCandidate[]>([]);
   const [isSearchingName, setIsSearchingName] = useState(false);
@@ -348,28 +343,6 @@ export const HeroScanner: React.FC<HeroScannerProps> = ({
                 </button>
               ))}
             </div>
-
-            {/* Synthetic Demo Mode Quick Strip when Demo Mode is enabled */}
-            {demoMode && demoReports.length > 0 && (
-              <div className="p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-xs text-[#F59E0B] font-medium">
-                  <FlaskConical className="w-4 h-4 shrink-0" />
-                  <span>Synthetic Demo Mode Active — Explore sample scenarios:</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {demoReports.map((dr) => (
-                    <button
-                      key={dr.scanId}
-                      type="button"
-                      onClick={() => onOpenReport(dr.scanId)}
-                      className="px-2.5 py-1 rounded-lg bg-[#080817] hover:bg-[#15162D] border border-[#F59E0B]/40 text-xs text-[#F8FAFC] font-medium transition-colors cursor-pointer"
-                    >
-                      {dr.token.symbol}: {dr.riskOverview.classification}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -863,11 +836,6 @@ export const TokenExplorerTable: React.FC<TokenExplorerTableProps> = ({
                         <div className="min-w-0">
                           <div className="font-semibold text-[#F8FAFC] group-hover:text-[#A78BFA] transition-colors flex items-center gap-1.5">
                             <span className="truncate max-w-[180px]">{report.token.name}</span>
-                            {report.isDemo && (
-                              <span className="text-[10px] font-mono text-[#F59E0B]">
-                                [DEMO]
-                              </span>
-                            )}
                           </div>
                           <div className="text-[11px] text-[#94A3B8] font-mono">
                             {shortenAddress(report.token.contractAddress)}
@@ -950,19 +918,17 @@ export const TokenExplorerTable: React.FC<TokenExplorerTableProps> = ({
                         >
                           <Bookmark className="w-3.5 h-3.5" />
                         </button>
-                        {!report.isDemo && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onRescan(report.token.networkId, report.token.contractAddress)
-                            }
-                            aria-label="Rescan token"
-                            title="Force Live Rescan"
-                            className="p-1.5 rounded-lg bg-[#0B0C1E] border border-[#23254A] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onRescan(report.token.networkId, report.token.contractAddress)
+                          }
+                          aria-label="Rescan token"
+                          title="Force Live Rescan"
+                          className="p-1.5 rounded-lg bg-[#0B0C1E] border border-[#23254A] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => onOpenReport(report.scanId)}

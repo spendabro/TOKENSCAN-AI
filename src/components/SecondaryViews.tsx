@@ -9,7 +9,6 @@ import {
   Settings,
   CheckCircle2,
   AlertTriangle,
-  FlaskConical,
   ChevronRight,
   Trash2,
   Download,
@@ -554,17 +553,15 @@ export const SavedAndHistoryView: React.FC<{
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {!report.isDemo && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onScanToken(report.token.networkId, report.token.contractAddress)
-                        }
-                        className="px-2.5 py-1 rounded-lg bg-[#0B0C1E] hover:bg-[#1E2040] border border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors cursor-pointer"
-                      >
-                        Rescan
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onScanToken(report.token.networkId, report.token.contractAddress)
+                      }
+                      className="px-2.5 py-1 rounded-lg bg-[#0B0C1E] hover:bg-[#1E2040] border border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors cursor-pointer"
+                    >
+                      Rescan
+                    </button>
                     <button
                       type="button"
                       onClick={() => onOpenReport(report.scanId)}
@@ -587,12 +584,7 @@ export const SavedAndHistoryView: React.FC<{
 // DOCUMENTATION, METHODOLOGY & ABOUT VIEW
 // ============================================================================
 
-export const DocumentationView: React.FC<{
-  demoMode: boolean;
-  onToggleDemoMode: () => void;
-  demoReports: TokenScanReport[];
-  onOpenReport: (scanId: string) => void;
-}> = ({ demoMode, onToggleDemoMode, demoReports, onOpenReport }) => {
+export const DocumentationView: React.FC = () => {
   const networks = Object.values(SUPPORTED_NETWORKS);
 
   return (
@@ -711,60 +703,6 @@ export const DocumentationView: React.FC<{
               ))}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      {/* Synthetic Demo Mode Control Panel */}
-      <section className="rounded-2xl bg-[#15162D] border border-[#25274D] p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#23254A] pb-3">
-          <div className="flex items-center gap-2.5">
-            <FlaskConical className="w-5 h-5 text-[#F59E0B]" />
-            <div>
-              <h3 className="text-base font-bold text-[#F8FAFC]">
-                Hackathon Demo Mode &amp; Synthetic Test Scenarios
-              </h3>
-              <p className="text-xs text-[#94A3B8]">
-                Inspect synthetic edge-case reports clearly labeled as Demo Mode alongside live
-                blockchain scanning.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onToggleDemoMode}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-              demoMode
-                ? 'bg-[#F59E0B] text-[#080817]'
-                : 'bg-[#0B0C1E] border border-[#25274D] text-[#F8FAFC] hover:border-[#F59E0B]'
-            }`}
-          >
-            {demoMode ? 'Disable Synthetic Demo Mode' : 'Enable Synthetic Demo Mode'}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {demoReports.map((dr) => (
-            <div
-              key={dr.scanId}
-              className="p-4 rounded-xl bg-[#0B0C1E] border border-[#23254A] flex flex-col justify-between space-y-3"
-            >
-              <div className="space-y-1">
-                <div className="text-xs font-mono text-[#F59E0B]">[SYNTHETIC SAMPLE]</div>
-                <div className="text-sm font-bold text-[#F8FAFC]">{dr.demoScenarioLabel}</div>
-                <div className="text-xs text-[#94A3B8]">
-                  {dr.token.name} ({dr.token.symbol})
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => onOpenReport(dr.scanId)}
-                className="w-full py-2 rounded-lg bg-[#15162D] hover:bg-[#8B5CF6] text-xs font-semibold text-[#F8FAFC] hover:text-white transition-colors cursor-pointer"
-              >
-                Inspect Demo Scenario
-              </button>
-            </div>
-          ))}
         </div>
       </section>
     </div>

@@ -12,7 +12,6 @@ import {
   Share2,
   ChevronDown,
   ChevronUp,
-  FlaskConical,
   Sparkles,
   Send,
   Loader2,
@@ -305,36 +304,6 @@ export const ReportView: React.FC<ReportViewProps> = ({
         </div>
       </div>
 
-      {/* SYNTHETIC DEMO MODE WARNING BANNER */}
-      {report.isDemo && (
-        <div
-          role="region"
-          aria-label="Synthetic Demo Report Notice"
-          className="p-4 rounded-2xl bg-[#F59E0B]/15 border border-[#F59E0B]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-        >
-          <div className="flex items-start gap-3">
-            <FlaskConical className="w-5 h-5 text-[#F59E0B] shrink-0 mt-0.5" />
-            <div>
-              <div className="text-sm font-bold text-[#F59E0B]">
-                SYNTHETIC DEMO MODE REPORT — {report.demoScenarioLabel}
-              </div>
-              <p className="text-xs text-[#F8FAFC]/90 mt-0.5">
-                This report contains synthetic sample data designed to demonstrate how TokenLens AI
-                handles high-risk permissions, low-risk contracts, and incomplete provider telemetry.
-                It is not a live blockchain scan.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onBackToDashboard}
-            className="px-3.5 py-2 rounded-xl bg-[#080817] hover:bg-[#15162D] border border-[#F59E0B]/40 text-xs font-semibold text-[#F59E0B] whitespace-nowrap shrink-0"
-          >
-            Scan a Live Token
-          </button>
-        </div>
-      )}
-
       {/* 1. REPORT HEADER */}
       <section className="rounded-2xl bg-[#15162D] border border-[#25274D] p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-6">
@@ -388,17 +357,15 @@ export const ReportView: React.FC<ReportViewProps> = ({
                   )}
                 </button>
 
-                {!report.isDemo && (
-                  <a
-                    href={explorerAddressUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0B0C1E] hover:bg-[#1E2040] border border-[#25274D] text-[#F8FAFC] transition-colors"
-                  >
-                    <span>{netCfg.explorerName}</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-[#94A3B8]" />
-                  </a>
-                )}
+                <a
+                  href={explorerAddressUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0B0C1E] hover:bg-[#1E2040] border border-[#25274D] text-[#F8FAFC] transition-colors"
+                >
+                  <span>{netCfg.explorerName}</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-[#94A3B8]" />
+                </a>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-[#94A3B8] pt-0.5">
@@ -475,17 +442,15 @@ export const ReportView: React.FC<ReportViewProps> = ({
               )}
             </button>
 
-            {!report.isDemo && (
-              <button
-                type="button"
-                disabled={isScanning}
-                onClick={() => onRescan(report.token.networkId, report.token.contractAddress)}
-                className="px-3.5 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-xs font-semibold text-white inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <RefreshCw className={`w-4 h-4 shrink-0 ${isScanning ? 'animate-spin' : ''}`} />
-                <span>Rescan Live</span>
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={isScanning}
+              onClick={() => onRescan(report.token.networkId, report.token.contractAddress)}
+              className="px-3.5 py-2 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-xs font-semibold text-white inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 shrink-0 ${isScanning ? 'animate-spin' : ''}`} />
+              <span>Rescan Live</span>
+            </button>
           </div>
         </div>
       </section>

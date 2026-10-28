@@ -15,14 +15,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  FlaskConical,
   Sun,
   Moon,
   HelpCircle,
   LogOut,
 } from 'lucide-react';
 import { NetworkId } from '../types/tokenlens.ts';
-import type { User } from '../lib/firebase.ts';
+import type { SessionUser } from '../lib/firebase.ts';
 
 export type NavTab =
   | 'dashboard'
@@ -44,8 +43,6 @@ interface NavigationProps {
   onToggleSidebar: () => void;
   selectedNetwork: NetworkId;
   onSelectNetwork: (net: NetworkId) => void;
-  demoMode: boolean;
-  onToggleDemoMode: () => void;
   bookmarksCount: number;
   historyCount: number;
   lightMode: boolean;
@@ -53,7 +50,7 @@ interface NavigationProps {
   globalSearchQuery: string;
   onGlobalSearchChange: (q: string) => void;
   onGlobalSearchSubmit: () => void;
-  currentUser: User;
+  currentUser: SessionUser;
   onSignOut: () => void;
 }
 
@@ -104,8 +101,6 @@ export const Sidebar: React.FC<NavigationProps> = ({
   onSelectTab,
   sidebarCollapsed,
   onToggleSidebar,
-  demoMode,
-  onToggleDemoMode,
   bookmarksCount,
   historyCount,
   lightMode,
@@ -226,46 +221,8 @@ export const Sidebar: React.FC<NavigationProps> = ({
         ))}
       </nav>
 
-      {/* Sidebar Footer: Demo Mode Switch & Authenticated User Profile */}
-      <div className="p-3 border-t border-[#1E2040] space-y-2.5">
-        <div
-          className={`flex items-center ${
-            sidebarCollapsed ? 'justify-center' : 'justify-between'
-          } px-3 py-2.5 rounded-xl bg-[#101126] border border-[#1E2040]`}
-        >
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-2 min-w-0">
-              <FlaskConical
-                className={`w-4 h-4 shrink-0 ${
-                  demoMode ? 'text-[#F59E0B]' : 'text-[#94A3B8]'
-                }`}
-              />
-              <div className="truncate">
-                <div className="text-xs font-medium text-[#F8FAFC]">Demo Mode</div>
-                <div className="text-[11px] text-[#94A3B8]">
-                  {demoMode ? 'Synthetic Samples' : 'Live Blockchain'}
-                </div>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={onToggleDemoMode}
-            role="switch"
-            aria-checked={demoMode}
-            aria-label="Toggle synthetic demo mode"
-            title="Switch between Live Blockchain Scanning and Synthetic Demo Mode"
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 focus:outline-none ${
-              demoMode ? 'bg-[#F59E0B]' : 'bg-[#25274D]'
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-150 ${
-                demoMode ? 'translate-x-4' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </div>
-
+      {/* Sidebar Footer: Authenticated User Profile */}
+      <div className="p-3 border-t border-[#1E2040]">
         {/* User Account & Sign Out */}
         <div
           className={`flex items-center ${
@@ -315,8 +272,6 @@ export const TopBar: React.FC<NavigationProps> = ({
   onSelectTab,
   selectedNetwork,
   onSelectNetwork,
-  demoMode,
-  onToggleDemoMode,
   lightMode,
   onToggleLightMode,
   globalSearchQuery,
@@ -412,19 +367,6 @@ export const TopBar: React.FC<NavigationProps> = ({
             </optgroup>
           </select>
         </div>
-
-        <button
-          onClick={onToggleDemoMode}
-          className={`p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium border transition-colors whitespace-nowrap flex items-center gap-1.5 shrink-0 cursor-pointer ${
-            demoMode
-              ? 'bg-[#F59E0B]/15 border-[#F59E0B]/50 text-[#F59E0B]'
-              : 'bg-[#15162D] border-[#25274D] text-[#94A3B8] hover:text-[#F8FAFC]'
-          }`}
-          title="Toggle Synthetic Demo Mode Reports"
-        >
-          <FlaskConical className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{demoMode ? 'Demo Active' : 'Demo Mode'}</span>
-        </button>
 
         <button
           onClick={() => onSelectTab('signals')}
